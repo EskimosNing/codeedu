@@ -1,0 +1,60 @@
+research_task:
+  description: >
+    Conduct a thorough research about Python
+    Make sure you find any interesting and relevant information given
+    
+  expected_output: >
+    A list with 10 bullet points of the most relevant information about Python
+  agent: researcher
+
+reporting_task:
+  description: >
+    Review the context you got and expand each topic into a full section for a report
+    Make sure the report is detailed and contains any and all relevant information.
+  expected_output: >
+    A fully fledged report with the main topics, each with a full section of information
+    Formatted as markdown without 
+  agent: reporting_analyst
+
+distribute_task:
+  description: >
+    Responsible for choosing the agents and tasks to resolve the user request
+  expected_output: >
+    It returns a dictionary with the delegation configuration and the user request
+    The delegation configuration is a dictionary with the agents and tasks to be used in the delegation
+    The user request is the request that the user made to the system
+  agent: planner
+
+code_task:
+  description: >
+    Write the code for the user request
+    User has asked:\n\n{question}\n\n
+    Generate the Python code to satisfy this request, execute the code,
+    and write out  any output files via the File Writer tool.
+  expected_output: >
+    The actual code used to get the answer to the file.
+  agent: programmer
+
+
+education_task:
+  description: >
+    Teach me about LLM.
+  expected_output: >
+    A summary of the knowledge about LLM.
+  agent: educator
+
+# chat_task:
+#   description: >
+#     Use the conversation history to build your response to the user:
+
+#     {history}
+
+#     Respond to the user's message: {user_message}",
+#   expected_output: >
+#     Your output should be a relevant, accurate, and engaging response that directly addresses the user's query or continues the conversation logically.
+#   agent: assistant
+
+
+
+
+
