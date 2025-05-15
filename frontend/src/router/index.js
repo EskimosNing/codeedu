@@ -7,7 +7,7 @@ import Main from "../components/Main.vue"
 import Report from "../components/ReportComponent.vue"
 import Standby from "../components/standby.vue"
 import Camera from "../components/camera.vue"
-import Aside from "../components/History.vue"
+import Login from "@/components/Login.vue";
 
 Vue.use(VueRouter)
 
@@ -21,6 +21,7 @@ const router = new VueRouter({
         {path:'/report', component: Report},
         {path:'/standby', component: Standby},
         {path:'/camera', component: Camera},
+        {path:'/login', component: Login},
     ]
 })
 
