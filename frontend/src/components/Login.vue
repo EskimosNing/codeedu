@@ -118,7 +118,7 @@ export default {
     padding: 0 16px;
     border: 1px solid rgba(255, 255, 255, 0.3); /* 半透明边框 */
     border-radius: 10px;
-    font-size: 14px;
+    font-size: 15px;
     transition: all 0.3s;
     background-color: #1a1a1a;
 }
@@ -137,14 +137,13 @@ export default {
     color: white;
     border: none;
     border-radius: 10px;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
     transition: transform 0.2s;
 }
 
 .primary-btn:hover {
-    transform: translateY(-1px);
-    /* 悬停微动效 */
+    opacity: 0.8;
 }
 
 /* 底部链接区域 */
