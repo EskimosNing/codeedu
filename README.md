@@ -43,6 +43,16 @@ This example, unmodified, will run the create a `report.md` file with the output
 
 The CodeEdu Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
 
+## Frontend Setup
+```
+npm install
+```
+
+## Frontend Run
+```
+npm run serve
+```
+
 ## Support
 
 For support, questions, or feedback regarding the Codeedu Crew or crewAI.
