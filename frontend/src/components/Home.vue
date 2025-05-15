@@ -1,10 +1,21 @@
 <template>
     <div class="homeContainer">
+        <div class="introduction">
+            <img
+            :src="require('../assets/TeachingCode.png')"
+            class="logo"
+            :class="{ 'small-logo': isCollapse }"
+          >
+          <span class="logotext">编程教育多智能体系统</span>
+        </div>
+        <div class="guide">
+            我可以教你写代码，学习算法和数据结构，做代码习题，快来和我对话吧~
+        </div>
         <div class="input-wrapper" :class="{ focused: isInputFocused }">
             <textarea
                 ref="inputField"
                 v-model="userInput"
-                placeholder="输入您的问题或需求..."
+                placeholder="给多智能体编程教学系统发送消息"
                 @focus="isInputFocused = true"
                 @blur="isInputFocused = false"
                 @keydown.enter.exact.prevent="handleSubmit"
@@ -14,7 +25,7 @@
                 :disabled="!userInput.trim()"
                 @click="handleSubmit"
             >
-                <span v-show="!isLoading">▶</span>
+                <span v-show="!isLoading" class="arrow">▶</span>
                 <div v-show="isLoading" class="loader"></div>
             </button>
         </div>
@@ -29,30 +40,55 @@
     justify-content: center;
     height: 100vh;
 }
-.input-wrapper {
-  position: relative;
-  /* margin: 2rem 0; */
-  border-radius: 20px;
-  background-color: #404045;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  transition: box-shadow 0.3s ease;
-  border: 2px solid transparent;
-  width: 750px;
-  
+.introduction {
+    display: flex;
+    margin-bottom: 12px
 }
-.input-wrapper.focused {
+.guide{
+    color: white;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+.logo {
+    width: 80px;
+    height: 60px;
+}
+.logotext {
+    color: white;
+    margin-left: 15px;
+    font-size: 30px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* margin: 2rem 0; */
+    border-radius: 20px;
+    background-color: #404045;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+    border: 2px solid transparent;
+    width: 750px;
+    min-height: 150px;
+}
+/* .input-wrapper.focused {
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
   border-color: #74b9ff;
-}
+} */
 textarea {
-  width: 100%;
-  height: 100%;
-  padding: 1rem 4.5rem 1rem 2rem;
+  width: 100%px;
+  height: 60%;
+  padding: 12px 20px 0px 20px;
   border: none;
-  border-radius: 50px;
   resize: none;
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 17px;
+  font-weight: bolder;
+  color: white;
+  line-height: 1.7;
   background: transparent;
 }
 
@@ -62,26 +98,32 @@ textarea:focus {
 .submit-btn {
   position: absolute;
   right: 1rem;
-  top: 50%;
+  top: 80%;
   transform: translateY(-50%);
   width: 40px;
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: #74b9ff;
-  color: white;
+  background: #4d6bfe;
+  color: #f8faff;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #0984e3;
+  background: #4f6eca;
   transform: translateY(-50%) scale(1.05);
 }
 
 .submit-btn:disabled {
-  background: #dfe6e9;
+  background: #71717a;
+  color: #2a2a2e;
   cursor: not-allowed;
+}
+.arrow {
+    position: relative;
+    left: 2px;
+    font-size: 16px;
 }
 .loader {
   width: 24px;
@@ -105,7 +147,6 @@ export default {
   },
   methods: {
     handleSubmit(){
-
     }
   }
 }

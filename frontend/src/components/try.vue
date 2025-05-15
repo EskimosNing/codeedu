@@ -38,7 +38,8 @@
           <chatbot/>
       </div>
       <div v-else>
-          <home/>
+          <home>
+          </home>
       </div>
     </el-main>
   </el-container>
@@ -187,7 +188,7 @@ export default {
   border: none;
   padding: 15px 60px;
   font-size: 18px;
-  font-weight: bolder;
+  font-weight: bold;
 }
 
 .NewChatButton:hover {

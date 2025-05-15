@@ -4,7 +4,7 @@
           v-for="(dialogue, index) in Dialogues"
           :key="index"
           class="list-item"
-          :class="{ 'active': selectedDialogue === dialogue }"
+          :class="{ 'active': currentDialogue === dialogue }"
           @click="selectDialogue(dialogue)"
         >
             <span class="text">{{dialogue[0]['content']}}</span>
@@ -33,7 +33,7 @@ export default{
     },
     methods: {
         selectDialogue(dialogue){
-            this.selectedDialogue = dialogue
+            this.currentDialogue = dialogue
             this.$emit('child-event',{
                 message: dialogue,
             })
