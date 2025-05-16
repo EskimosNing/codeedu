@@ -53,19 +53,17 @@ export default {
     background: #000;
     display: flex;
     flex-direction: column;
-    /* 垂直排列子元素 */
     align-items: center;
-    /* 水平居中 */
 }
 
 .content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transform: translateY(-5%);
-  min-height: 100vh;
-  padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-5%);
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .introduction {
@@ -92,7 +90,8 @@ export default {
 .login-container {
     width: 370px;
     background: #1a1a1a;
-    border: 1px solid rgba(255, 255, 255, 0.1); /* 半透明边框 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* 半透明边框 */
     border-radius: 18px;
     padding: 40px;
     margin-top: 20px;
@@ -116,16 +115,16 @@ export default {
     width: 100%;
     height: 45px;
     padding: 0 16px;
-    border: 1px solid rgba(255, 255, 255, 0.3); /* 半透明边框 */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* 半透明边框 */
     border-radius: 10px;
     font-size: 15px;
-    transition: all 0.3s;
     background-color: #1a1a1a;
+    color: #fff;
 }
 
 .input-field:focus {
     border-color: #4d6bfe;
-    box-shadow: 0 0 8px rgba(77, 107, 254, 0.2);
     color: #fff;
 }
 
@@ -139,7 +138,6 @@ export default {
     border-radius: 10px;
     font-size: 15px;
     cursor: pointer;
-    transition: transform 0.2s;
 }
 
 .primary-btn:hover {
@@ -169,5 +167,4 @@ export default {
 .link:hover {
     opacity: 0.8;
 }
-
 </style>
