@@ -4,7 +4,6 @@
             <img
             :src="require('../assets/TeachingCode.png')"
             class="logo"
-            :class="{ 'small-logo': isCollapse }"
           >
           <span class="logotext">编程教育多智能体系统</span>
         </div>
@@ -147,6 +146,9 @@ export default {
   },
   methods: {
     handleSubmit(){
+        this.$emit('child-event',{
+            message: this.userInput,
+        })
     }
   }
 }

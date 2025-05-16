@@ -3,55 +3,47 @@
     <div class="chat-box">
       <div
         class="sector"
-        v-for="msg in messages"
-        :key="msg.id"
+        v-for="(msg, index) in currentDialogue"
+        :key="index"
       >
         <div
-          v-if="!msg.user"
+          v-if="msg.role==='assistant'"
           class="agent"
         >
           <el-image
             style="width: 23px; height: 23px;"
-            :src="require('../assets/hos.png')">
+            :src="require('../assets/TeachingCode.png')">
           </el-image>
-          <h4>&nbsp;Assistant</h4>
+          <h4>&nbsp;Agent</h4>
         </div>
         <div
           class="message"
-          :class="{ 'user': msg.user , 'robot': !msg.user}"
+          :class="msg.role"
         >
-          <strong>{{ msg.text }}</strong>
-        </div>
-        <div
-          v-if="key in msg"
-          class="questions"
-        >
-            <div v-for="q in msg.questions" class="question" :key="q" @click="chooseResponse(q)">
-              <strong>{{q}}</strong>
-            </div>
-        </div>
-        <div
-          class="showimage"
-          v-if="'showImage' in msg"
-          :class="{ 'user': msg.user , 'robot': !msg.user}"
-        >
-          <el-image
-            :src="require('../assets/pain.jpg')">
-          </el-image>
+          <strong>{{ msg.content }}</strong>
         </div>
       </div>
     </div>
+    <!-- 发消息部分 -->
     <div class="input-area">
-      <el-button type="text" :class="{'recording': isRecording}" @click="toggleRecording">
-        <i class="el-icon-microphone" :class="{'recording': isRecording}"></i>
-      </el-button>
-      <input
-        type="text"
-        v-model="userMessage"
-        @keyup.enter="sendMessage"
-        placeholder="输入消息..."
-      />
-      <button @click="sendMessage" class="sbutton">发送</button>
+        <div class="input-wrapper" :class="{ focused: isInputFocused }">
+          <textarea
+              ref="inputField"
+              v-model="userMessage"
+              placeholder="给多智能体编程教学系统发送消息"
+              @focus="isInputFocused = true"
+              @blur="isInputFocused = false"
+              @keydown.enter.exact.prevent="handleSubmit"
+          ></textarea>
+          <button 
+              class="submit-btn"
+              :disabled="!userMessage.trim()"
+              @click="handleSubmit"
+          >
+              <span v-show="!isLoading" class="arrow">▶</span>
+              <div v-show="isLoading" class="loader"></div>
+          </button>
+        </div>
     </div>
   </div>
 </template>
@@ -61,6 +53,11 @@ import axios from "../api";
 export default {
   name: 'ChatBot',
   // isDisabled: !reportGeneration,
+  props:  {
+    currentDialogue: {
+      type: Array,
+    }
+  },
   data() {
     return {
       userMessage: '',
@@ -73,6 +70,8 @@ export default {
       isRecording: false,
       stream: null,
       currentUtterance: null,
+      isInputFocused : false,
+      isLoading: false
     };
   },
   // 需要初始化
@@ -88,80 +87,16 @@ export default {
     //     })
   },
   methods: {
+    handleSubmit() {
+      this.$emit('child-event',{
+        message: this.userMessage,
+      })
+      this.userMessage = ""
+    },
     sendMessage() {
-      if (this.userMessage.trim()) {
-        let temp = this.messages.length - 2;
-        temp = Math.max(temp,0)
-        for (let i = temp; i < this.messages.length; i++) {
-          if (this.key in this.messages[i]){
-            this.$delete(this.messages[i], this.key);
-          }
-        }
-        this.messages.push({ id: this.nextMessageId++, user: true, text: this.userMessage});
-        this.getBotResponse(this.userMessage);
-        this.userMessage = '';
-      }
     },
     getBotResponse(userMessage) {
-      // 简单的回复逻辑，可以根据需要进行修改
-      let forms = new FormData();
-      forms.append("userMessage",userMessage);
-      axios.post('/robotReply',forms)
-        .then(response => {
-          if(response.status == 200){
-            //判断回复是否为空
-            if(this.currentUtterance){
-              speechSynthesis.cancel(this.currentUtterance);
-              this.currentUtterance = null;
-            }
-            let temp = {};
-            if(response.data.Reply != ""){
-              temp["id"] = this.nextMessageId++;
-              temp["user"] = false;
-              temp["text"] = response.data.Reply;
-              if(response.data.Questions.length > 0){
-                temp["questions"] = response.data.Questions;
-              }
-              //添加showImage
-              if(response.data.showImage.length > 0){
-                temp["showImage"] = response.data.showImage;
-              }
-              // console.log(response.data.showImage)
-              this.messages.push(temp);
-            }
-            if(temp["text"]!=""){
-              let utterance = new SpeechSynthesisUtterance(temp["text"]);
-              utterance.lang = 'zh-CN';
-              this.currentUtterance = utterance;
-              speechSynthesis.speak(utterance);
-            }
-            if("reAsk" in response.data){
-              temp = {};
-              temp["id"] = this.nextMessageId++;
-              temp["user"] = false;
-              temp["text"] = response.data.reAsk;
-              if(response.data.reChoice.length > 0){
-                temp["questions"] = response.data.reChoice;
-              }
-              this.messages.push(temp);
-              //进行音频处理
-              if(temp["text"]!=""){
-                let utterance = new SpeechSynthesisUtterance(temp["text"]);
-                utterance.lang = 'zh-CN';
-                this.currentUtterance = utterance;
-                speechSynthesis.speak(utterance);
-              }
-            }
-            this.$store.commit('update', response.data.reportGeneration);
-            // console.log(response.data.reportGeneration)
-            this.$nextTick(() => {
-              this.scrollToBottom();
-            });
-          }
-        })
-        .catch(error => {
-          // 处理错误
-        });
+      
     },
     chooseResponse(response){
       this.userMessage = response;
@@ -172,50 +107,7 @@ export default {
       chatBox.scrollTop = chatBox.scrollHeight;
     },
     async toggleRecording() {
-      if (this.isRecording) {
-        // 停止录音
-        this.audioChunks = [];
-        this.mediaRecorder.stop();
-        this.isRecording = false;
-        this.stream.getAudioTracks().forEach(track => {
-          track.stop();
-        });
-        this.stream = null;
-        this.mediaRecorder = null;
-      } else {
-        // 开始录音，同时停止音频输出
-        if(this.currentUtterance){
-          speechSynthesis.cancel(this.currentUtterance);
-          this.currentUtterance = null;
-        }
-        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        this.mediaRecorder = new MediaRecorder(this.stream);
-        this.mediaRecorder.start();
-        this.isRecording = true;
-
-        this.mediaRecorder.ondataavailable = (e) => {
-          this.audioChunks.push(e.data);
-        };
-
-        this.mediaRecorder.onstop = () => {
-          const blob = new Blob(this.audioChunks, { type: 'audio/ogg; codecs=opus' });
-          let forms = new FormData();
-          forms.append('audio',blob,'audio.ogg');
-          console.log("发出请求")
-          // const apiInstance = axios.create({
-          //       baseURL: 'http://localhost:5003', // 替换为你的局域网 IP 和端口
-          //       timeout: 100000,
-          //   });
-          axios.post('audio2text',forms)
-          .then(response => {
-          if(response.status == 200){
-            this.userMessage = response.data.userMessage;
-            this.sendMessage();
-          }
-        })
-          // console.log('录音完成，文件URL:', audioURL);
-        };
-      }
+      
     }
   }
 };
@@ -225,14 +117,14 @@ export default {
 .chat-container {
   width: 100%;
   height: 100%;
-  background: #2a2a2e;
   /* display: flex;          
   flex-direction: column; */
 }
 /* 当前还存在问题，当出现一长串英文字母的时候会影响到界面 */
 .chat-box {
   /* 该处需要关注，之前设置为-130px */
-  height:calc(100vh - 150px);
+  margin-top: 2%;
+  height:calc(98vh - 150px);
   width: 100%;
   display: flex;          
   flex-direction: column;
@@ -255,8 +147,9 @@ export default {
 .agent{
   /*这里是绝对值，需要注意*/
   height: 23px;
-  margin-left:10%;
+  margin-left:20%;
   margin-top: 10px;
+  color: #4c6afc;
   display: flex;
   flex-direction: row;
   align-items: center; /* 垂直居中 */
@@ -266,23 +159,25 @@ export default {
   max-width: 60%;          /* 设置宽度 */
   /*border: 1px solid #ccc; /* 可选: 添加边框以便观察 */
   border-radius: 12px;
-  padding: 10px;        /* 可选: 添加内边距 */
   white-space: pre-wrap;
+  font-size: 17px;
 }
 .message.user {
   margin: 10px 0;
-  background-color: #5d5cde;
+  padding: 10px;        /* 可选: 添加内边距 */
+  background-color: #414158;
   text-align: left;
   color: #fcfbfe;
   align-self: flex-end;
-  margin-right:10%;
+  margin-right:20%;
 }
-.message.robot {
-  margin-top: 3px;
-  background-color: #f7f7f7;
+.message.assistant {
+  margin-top: 10px;
+  color: white;
+  font-weight:  bold;
   text-align: left;
   align-self: flex-start;
-  margin-left: 10%;
+  margin-left: 20%;
 }
 .questions{
   margin-left:10%;
@@ -319,12 +214,82 @@ export default {
 }
 .input-area {
   /* 此处可能要注意 */
-  margin-top: 20px;
-  height: 45px;
+  height: 130px;
   display: flex;
-  padding: 10px;
   justify-content: center; /* 水平居中 */
   align-items: center;     /* 垂直居中 */
+}
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* margin: 2rem 0; */
+    border-radius: 20px;
+    background-color: #404045;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+    border: 2px solid transparent;
+    width: 750px;
+    min-height: 120px;
+}
+/* .input-wrapper.focused {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  border-color: #74b9ff;
+} */
+textarea {
+  width: 100%px;
+  height: 60%;
+  padding: 12px 20px 0px 20px;
+  border: none;
+  resize: none;
+  font-size: 17px;
+  font-weight: bolder;
+  color: white;
+  line-height: 1.7;
+  background: transparent;
+}
+
+textarea:focus {
+  outline: none;
+}
+.submit-btn {
+  position: absolute;
+  right: 1rem;
+  top: 80%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #4d6bfe;
+  color: #f8faff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #4f6eca;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.submit-btn:disabled {
+  background: #71717a;
+  color: #2a2a2e;
+  cursor: not-allowed;
+}
+.arrow {
+    position: relative;
+    left: 2px;
+    font-size: 16px;
+}
+.loader {
+  width: 24px;
+  height: 24px;
+  margin: 0 auto;
+  border: 3px solid #fff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: rotation 1s linear infinite;
 }
 .input-area input {
   font-weight: bold;

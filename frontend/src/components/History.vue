@@ -33,7 +33,7 @@ export default{
     },
     methods: {
         selectDialogue(dialogue){
-            this.currentDialogue = dialogue
+            // this.currentDialogue = dialogue
             this.$emit('child-event',{
                 message: dialogue,
             })

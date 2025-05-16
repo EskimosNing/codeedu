@@ -35,10 +35,11 @@
     <!-- 主内容区域 -->
     <el-main class="main-content">
       <div v-if="selectedDialogue">
-          <chatbot/>
+          <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse"> 
+          </chatbot>
       </div>
       <div v-else>
-          <home>
+          <home @child-event="createNewDialogue">
           </home>
       </div>
     </el-main>
@@ -67,7 +68,7 @@ export default {
     }
   },
   mounted(){
-    this.dialogueHistory = [[{"role":"user", "content":"Who are you Who are you Who are you?Who are you"},{"role":"assistant", "content":"I'm a coding teaching agent."}],[{"role":"user", "content":"I'm a student from polyu"},{"role":"assistant", "content":"What do you want to learn."}]]
+    this.dialogueHistory = [[{"role":"user", "content":"Who are you Who are you Who are you?Who are you"},{"role":"assistant", "content":"我是多智能体系统"}],[{"role":"user", "content":"I'm a student from polyu"},{"role":"assistant", "content":"What do you want to learn."}]]
   },
   methods: {
     toggleCollapse() {
@@ -77,9 +78,25 @@ export default {
     creatNewChat() {
       this.selectedDialogue = null
     },
+    createNewDialogue(receivedData) {
+      let temp = [{'role':'user', 'content':receivedData.message}]
+      this.dialogueHistory.unshift(temp)
+      this.selectedDialogue = this.dialogueHistory[0]
+      this.sendMessage(receivedData.message)
+    },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogue = receivedData.message
-    }
+    },
+    getAgentResponse(receivedData) {
+      let temp = {'role':'user', 'content': receivedData.message}
+      this.selectedDialogue.push(temp)
+      let ttemp = {'role':'assistant', 'content': receivedData.message}
+      this.selectedDialogue.push(ttemp)
+    },
+    sendMessage(userMessage) {
+      console.log(userMessage)
+      this.selectedDialogue.push({'role':'assistant','content':'模拟回复'})
+    },
   }
 }
 </script>
