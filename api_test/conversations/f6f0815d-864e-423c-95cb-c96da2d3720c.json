@@ -1,0 +1,11 @@
+[
+  {
+    "role": "user",
+    "content": "爱上"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 爱上",
+    "thought": "AI 的思考: 爱上"
+  }
+]
