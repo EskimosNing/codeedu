@@ -38,6 +38,7 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
+    overflow-x: auto;
 }
 .introduction {
     display: flex;

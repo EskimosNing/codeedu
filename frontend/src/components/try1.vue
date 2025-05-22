@@ -78,7 +78,7 @@ export default {
       collapsedWidth: '80px',
       dialogueHistory: [],
       selectedDialogue: null,
-      isSplitView: false // 新增
+      isSplitView: true // 新增
     }
   },
   mounted() {
