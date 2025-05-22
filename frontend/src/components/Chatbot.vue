@@ -14,7 +14,13 @@
             style="width: 23px; height: 23px;"
             :src="require('../assets/TeachingCode.png')">
           </el-image>
-          <h4>&nbsp;Agent</h4>
+          <h4>&nbsp;Coding Tutor</h4>
+        </div>
+        <div
+          v-if="msg.role==='assistant' && !(msg.thought==='')"
+          class="thought"
+        >
+          {{ msg.thought }}
         </div>
         <div
           class="message"
@@ -124,7 +130,7 @@ export default {
 .chat-box {
   /* 该处需要关注，之前设置为-130px */
   margin-top: 2%;
-  height:calc(98vh - 150px);
+  height:calc(98vh - 180px);
   width: 100%;
   display: flex;          
   flex-direction: column;
@@ -147,29 +153,44 @@ export default {
 .agent{
   /*这里是绝对值，需要注意*/
   height: 23px;
-  margin-left:20%;
-  margin-top: 10px;
+  margin-left:18%;
+  margin-top: 40px;
   color: #4c6afc;
   display: flex;
   flex-direction: row;
   align-items: center; /* 垂直居中 */
   justify-content: flex-start; /* 水平左对齐 */
 }
+.thought {
+  border-left: 3px solid #4e4e56;
+  padding-left: 10px;
+  white-space: pre-wrap;
+  font-size: 16px;
+  margin-top: 10px;
+  color: #a6a6a6;
+  text-align: left;
+  align-self: flex-start;
+  margin-left: 18%;
+  max-width: 62%; 
+  word-wrap: break-word;
+}
 .message {
-  max-width: 60%;          /* 设置宽度 */
+  /* max-width: 60%;          设置宽度 */
   /*border: 1px solid #ccc; /* 可选: 添加边框以便观察 */
   border-radius: 12px;
   white-space: pre-wrap;
-  font-size: 17px;
+  font-size: 19px;
+  word-wrap: break-word;
 }
 .message.user {
-  margin: 10px 0;
+  margin-top: 40px;
   padding: 10px;        /* 可选: 添加内边距 */
   background-color: #414158;
   text-align: left;
   color: #fcfbfe;
   align-self: flex-end;
   margin-right:20%;
+  max-width: 60%; 
 }
 .message.assistant {
   margin-top: 10px;
@@ -177,7 +198,8 @@ export default {
   font-weight:  bold;
   text-align: left;
   align-self: flex-start;
-  margin-left: 20%;
+  margin-left: 18%;
+  max-width: 62%; 
 }
 .questions{
   margin-left:10%;
@@ -214,10 +236,10 @@ export default {
 }
 .input-area {
   /* 此处可能要注意 */
-  height: 130px;
+  height: 150px;
   display: flex;
   justify-content: center; /* 水平居中 */
-  align-items: center;     /* 垂直居中 */
+  align-items: center;     /*垂直居中 */
 }
 .input-wrapper {
     display: flex;

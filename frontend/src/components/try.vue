@@ -35,7 +35,7 @@
     <!-- 主内容区域 -->
     <el-main class="main-content">
       <div v-if="selectedDialogue">
-          <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse"> 
+          <chatbot ref="chatbot" :currentDialogue="selectedDialogue" @child-event="getAgentResponse"> 
           </chatbot>
       </div>
       <div v-else>
@@ -50,6 +50,7 @@
 import Chatbot from './Chatbot.vue'
 import History from "./History.vue"
 import Home from "./Home.vue"
+import axios from "../api"
 export default {
   components:{
     History,
@@ -65,9 +66,11 @@ export default {
       collapsedWidth: '80px',
       dialogueHistory: [],
       selectedDialogue: null,
+      abortController: null,
     }
   },
   mounted(){
+    
     this.dialogueHistory = [[{"role":"user", "content":"Who are you Who are you Who are you?Who are you"},{"role":"assistant", "content":"我是多智能体系统"}],[{"role":"user", "content":"I'm a student from polyu"},{"role":"assistant", "content":"What do you want to learn."}]]
   },
   methods: {
@@ -79,23 +82,80 @@ export default {
       this.selectedDialogue = null
     },
     createNewDialogue(receivedData) {
-      let temp = [{'role':'user', 'content':receivedData.message}]
+      let temp = []
       this.dialogueHistory.unshift(temp)
       this.selectedDialogue = this.dialogueHistory[0]
-      this.sendMessage(receivedData.message)
+      this.getAgentResponse(receivedData)
     },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogue = receivedData.message
     },
-    getAgentResponse(receivedData) {
+    callscrollToBottom() {
+      this.$refs.chatbot.scrollToBottom()
+    },
+    // getAgentResponse(receivedData) {
+    //   let temp = {'role':'user', 'content': receivedData.message}
+    //   this.selectedDialogue.push(temp)
+    //   axios.get('/answer',{
+    //     params: {message:receivedData.message}
+    //   })
+    //   .then(response => {
+    //     console.log(response)
+    //     let ttemp = {'role':'assistant', 'content': receivedData.message}
+    //     this.selectedDialogue.push(ttemp)
+    //   })
+    // },
+    async getAgentResponse(receivedData) {
       let temp = {'role':'user', 'content': receivedData.message}
       this.selectedDialogue.push(temp)
-      let ttemp = {'role':'assistant', 'content': receivedData.message}
+      let ttemp = {'role':'assistant', 'content': '', 'thought': ''}
       this.selectedDialogue.push(ttemp)
-    },
-    sendMessage(userMessage) {
-      console.log(userMessage)
-      this.selectedDialogue.push({'role':'assistant','content':'模拟回复'})
+
+      if (this.abortController) {
+        this.abortController.abort()
+      }
+      this.abortController = new AbortController()
+
+      const res = await fetch(
+        `http://192.168.192.144:5000/answer?message=${encodeURIComponent(receivedData.message)}`,
+        { signal: this.abortController.signal }
+      );
+
+      console.log(this.selectedDialogue[-1])
+
+      if (!res.ok) throw new Error('网络请求失败')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+
+      const processStream = async () => {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          let lines = buffer.split('\n')
+          buffer = lines.pop() // 残留未完整的行
+
+          lines.forEach(line => {
+            if (!line.trim()) return
+            try {
+              const msg = JSON.parse(line)
+              if (msg.type === 'thought') {
+                  this.selectedDialogue[this.selectedDialogue.length-1]['thought'] += msg.data
+              } else if (msg.type === 'result') {
+                  this.selectedDialogue[this.selectedDialogue.length-1]['content'] += msg.data
+              }
+              this.callscrollToBottom()
+            } catch (err) {
+              console.error('JSON parse error:', line)
+            }
+          })
+        }
+      }
+      await processStream()
+      this.callscrollToBottom()
     },
   }
 }
