@@ -38,7 +38,6 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    transform: translateY(-7%);
 }
 .introduction {
     display: flex;
