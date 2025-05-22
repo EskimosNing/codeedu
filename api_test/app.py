@@ -183,7 +183,7 @@ def chat():
 
 
 
-    return jsonify({"reply": ai_response,"thought":ai_thought,"updated_title": message[:50] if is_new_conversation else None}})
+    return jsonify({"reply": ai_response,"thought":ai_thought,"updated_title": message[:50] if is_new_conversation else None})
 
 # --- 页面路由 ---
 @app.route("/")
@@ -270,4 +270,4 @@ def save_conversation_metadata(user_id, cid, title="新对话"):
 
 
 if __name__ == "__main__":
-    app.run(debug=False,host='0.0.0.0',port=8080)
+    app.run(debug=False,host='0.0.0.0',port=5001)
