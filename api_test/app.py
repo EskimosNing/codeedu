@@ -7,7 +7,7 @@ import time
 from crewai import Crew,Agent,Task,Process # 假设你已经有 agents 和 tasks 构建好了
 from crewai_tools import SerperDevTool,CodeInterpreterTool,FileWriterTool
 
-from langchain.memory.buffer import ConversationBufferMemory
+from langchain_core.memory import ConversationBufferMemory
 
 from langchain_core.prompts import ChatPromptTemplate
 import json
@@ -133,27 +133,12 @@ def build_my_crew():
     crew = Crew(agents=[researcher], tasks=[research_task],process=Process.sequential, verbose=True)  # 自定义函数，返回 crew 对象
     return crew
 
-# def load_history_for_user(user_id):
-#     # 从 Redis/SQLite/JSON 文件中加载历史对话
-#     # 这里假设我们有一个 JSON 文件来存储历史对话
-#     history_file = f"history_{user_id}.json"
-#     if os.path.exists(history_file):
-#         with open(history_file, "r") as f:  
-#             return json.load(f)
-#     else:
-#         return []
-
-# def save_history_for_user(user_id, history):
-#     # 保存历史对话到 Redis/SQLite/JSON 文件
-#     history_file = f"history_{user_id}.json"    
-#     with open(history_file, "w") as f:
-#         json.dump(history, f)
-
 # def send_from_directory(directory, filename):
 #     return send_file(os.path.join(directory, filename))
 
 # def send_file(path):
 #     return send_from_directory(STORAGE_PATH, path)
+
 # 发送消息并更新对话历史
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -165,15 +150,9 @@ def chat():
     
     history = load_conversation(cid)
 
-    is_new_conversation = len(history) == 0
-    # 如果是新会话，就自动保存 metadata（标题 = 第一条消息）
-    if is_new_conversation:
-        save_conversation(cid, [])
-        save_conversation_metadata("default", cid, title=message.strip()[:50])
-    # 记录用户消息
     history.append({"role": "user", "content": message})
 
-    # 创建 AI 响应（这里可以调用 CrewAI 进行推理）
+    # 创建 AI 响应
     ai_response = "AI 的回答: " + message  # 这里只是简单的回显消息，可以用 CrewAI 代替
     ai_thought = "AI 的思考: " + message  # 这里只是简单的回显消息，可以用 CrewAI 代替
     history.append({"role": "assistant", "content": ai_response,"thought":ai_thought})
@@ -181,9 +160,7 @@ def chat():
     # 保存更新后的历史
     save_conversation(cid, history)
 
-
-
-    return jsonify({"reply": ai_response,"thought":ai_thought,"updated_title": message[:50] if is_new_conversation else None})
+    return jsonify({"reply": ai_response,"thought":ai_thought})
 
 # --- 页面路由 ---
 @app.route("/")
@@ -195,9 +172,10 @@ def index():
 @app.route('/new_conversation', methods=['POST'])
 def new_conversation():
     user_id = request.json.get("user_id", "default")
+    message = request.json.get("message", "")
     cid = str(uuid.uuid4())
     save_conversation(cid, [])
-    return jsonify({"conversation_id": cid})
+    return jsonify({"conversation_id": cid, "title":message[:50]})
 
 
 @app.route('/conversations', methods=['GET'])
@@ -233,7 +211,7 @@ def get_conversations():
     return jsonify(conversations)
 
 
-
+#获取对话历史   
 @app.route('/conversation/<cid>', methods=['GET'])
 def get_conversation_history(cid):
     convo_path = get_convo_path(cid)
@@ -262,12 +240,16 @@ def answer():
         mimetype="text/plain"
     )
 
-def save_conversation_metadata(user_id, cid, title="新对话"):
-    # 保存对话元数据到 Redis/SQLite/JSON 文件
-    metadata_file = os.path.join(STORAGE_PATH, f"{cid}.meta.json")
-    with open(metadata_file, "w") as f:
-        json.dump({"user_id": user_id, "title": title}, f)  
+#删除对话
+@app.route("/delete_conversation/<cid>", methods=["DELETE"])
+def delete_conversation(cid):
+    convo_path = get_convo_path(cid)
+
+    if os.path.exists(convo_path):
+        os.remove(convo_path)
+
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":
-    app.run(debug=False,host='0.0.0.0',port=5001)
+    app.run(debug=False,host='127.0.0.1',port=5000)
