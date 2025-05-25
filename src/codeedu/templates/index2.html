@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>CrewAI 对话系统</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #conversations-list li { cursor: pointer; margin: 5px 0; }
+    #conversations-list li.active { font-weight: bold; color: green; }
+    textarea { width: 100%; }
+    button { padding: 8px 12px; margin-top: 10px; }
+    #result-area { border: 1px solid #ccc; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>对话列表</h2>
+  <ul id="conversations-list"></ul>
+  <button id="new-convo-button"> 新建对话</button>
+
+  <h2>AI 对话</h2>
+  <form id="chat-form" onsubmit="return false;">
+    <textarea id="input-message" placeholder="请输入你的消息..." rows="4"></textarea>
+    <button type="button" id="send-button">发送</button>
+  </form>
+
+  <h3>AI 回复</h3>
+  <pre id="result-area"></pre>
+
+  <script>
+
+    document.getElementById("new-convo-button").addEventListener("click", async () => {
+    const res = await fetch("/new_conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: "default" })  // 可动态传用户 ID
+    });
+
+    const data = await res.json();
+    const newCid = data.conversation_id;
+
+    // 重新加载所有对话列表并自动选中新的
+    await loadConversations();
+    selectConversationById(newCid);
+    });
+
+    let currentConversationId = null;
+
+    async function loadConversations() {
+      const res = await fetch('/conversations');
+      const conversations = await res.json();
+
+      const listElement = document.getElementById('conversations-list');
+      listElement.innerHTML = "";
+
+      conversations.forEach(({ id, title }) => {
+      const li = document.createElement('li');
+      li.textContent = `🗨️ ${title}`;
+      li.dataset.cid = id;
+      li.onclick = () => selectConversation(id, li);
+      listElement.appendChild(li);
+      });
+    }
+
+    // 自动选中某个对话并加载内容
+    function selectConversationById(cid) {
+      const targetLi = [...document.querySelectorAll("#conversations-list li")]
+        .find(li => li.dataset.cid === cid);
+
+      if (targetLi) {
+        selectConversation(cid, targetLi);
+      }
+    }
+
+    function selectConversation(cid, element) {
+      currentConversationId = cid;//
+      document.querySelectorAll("#conversations-list li").forEach(li => {
+        li.classList.remove("active");
+      });
+      element.classList.add("active");
+      //document.getElementById("result-area").textContent = "";
+      loadConversationHistory(cid);
+    }
+
+    // 加载并展示对话历史
+    async function loadConversationHistory(cid) {
+      const res = await fetch(`/conversation/${cid}`);
+      const history = await res.json();
+
+      const resultBox = document.getElementById("result-area");
+      resultBox.innerText = ""; // 清空旧内容
+
+      for (let message of history) {
+        if (message.role === "user") {
+          resultBox.innerText += `你：${message.content}\n\n`;
+        } else if (message.role === "assistant") {
+          resultBox.innerText += `thought:${message.thought}\nassistant:${message.content}\n\n`;
+        }
+        
+      }
+    }
+
+    document.getElementById("send-button").addEventListener("click", async () => {
+      const message = document.getElementById("input-message").value.trim();
+      const resultBox = document.getElementById("result-area");
+
+      if (!message) {
+        alert("请输入消息！");
+        return;
+      }
+
+      if (!currentConversationId) {
+        alert("请先选择一个对话！");
+        return;
+      }
+
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: currentConversationId,
+          message: message
+        })
+      });
+
+      const data = await response.json();
+      resultBox.innerText += `你：${message}\nthought:${data.thought}\nassistant:${data.reply}\n\n`;
+      document.getElementById("input-message").value = "";
+    });
+
+    loadConversations();
+  </script>
+</body>
+</html>

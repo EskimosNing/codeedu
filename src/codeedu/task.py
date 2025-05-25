@@ -2,16 +2,20 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
-from src.codeedu.agent_pool import planner, researcher, reporting_analyst, programmer, educator
+from agent_pool import planner, researcher, reporting_analyst, programmer, educator
 # from crewai.project import load_yaml_config
-
+from pathlib import Path
 # tasks_config = load_yaml_config('config/tasks.yaml')
 
 import yaml
    
+TASKS_PATH = Path(__file__).parent / "config" / "tasks.yaml"
 tasks_config=None
-with open("src/codeedu/config/tasks.yaml") as file:
-    tasks_config = yaml.safe_load(file)
+
+def load_yaml(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+tasks_config = load_yaml(TASKS_PATH)    
 
 distribute_task = Task(
     description=(
@@ -55,6 +59,8 @@ code_task = Task(
     expected_output=("The actual code used to get the answer to the file."),
     agent=programmer,
 )
+
+
 # class research_task(Task):
 #     def __init__(self):
 #         super().__init__(

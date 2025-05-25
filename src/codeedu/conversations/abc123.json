@@ -1,0 +1,18 @@
+[
+  {
+    "role": "user",
+    "content": "你好"
+  },
+  {
+    "role": "ai",
+    "content": "你好，我是AI助手！"
+  },
+  {
+    "role": "user",
+    "content": "推荐一本书"
+  },
+  {
+    "role": "ai",
+    "content": "我推荐《小王子》"
+  }
+]

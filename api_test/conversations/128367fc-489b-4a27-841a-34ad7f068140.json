@@ -1,0 +1,29 @@
+[
+  {
+    "role": "user",
+    "content": "草泥马2"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 草泥马2",
+    "thought": "AI 的思考: 草泥马2"
+  },
+  {
+    "role": "user",
+    "content": "草泥马2"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 草泥马2",
+    "thought": "AI 的思考: 草泥马2"
+  },
+  {
+    "role": "user",
+    "content": "草泥马2草泥马2草泥马2草泥马2草泥马2"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 草泥马2草泥马2草泥马2草泥马2草泥马2",
+    "thought": "AI 的思考: 草泥马2草泥马2草泥马2草泥马2草泥马2"
+  }
+]

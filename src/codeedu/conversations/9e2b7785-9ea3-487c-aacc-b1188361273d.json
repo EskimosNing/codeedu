@@ -1,0 +1,38 @@
+[
+  {
+    "role": "user",
+    "content": "爱仕达"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 爱仕达",
+    "thought": "爱仕达是一家中国的厨具品牌，成立于1978年，主要生产厨房用具和电器。"
+  },
+  {
+    "role": "user",
+    "content": "权威而"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 权威而",
+    "thought": "test thought"
+  },
+  {
+    "role": "user",
+    "content": "爱仕达"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 爱仕达",
+    "thought": "AI 的思考: 爱仕达"
+  },
+  {
+    "role": "user",
+    "content": "爱仕达"
+  },
+  {
+    "role": "assistant",
+    "content": "AI 的回答: 爱仕达",
+    "thought": "AI 的思考: 爱仕达"
+  }
+]
