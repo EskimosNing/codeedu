@@ -4,12 +4,13 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
 from crewai_tools import SerperDevTool,CodeInterpreterTool,FileWriterTool
 import os
+from langchain.memory import ConversationBufferMemory
 import sys
 from dotenv import load_dotenv
 import yaml
 from crewai import LLM
 import copy
-
+from pathlib import Path
 ##############
 load_dotenv()
 os.environ["MODEL"] = os.getenv("MODEL")
@@ -23,41 +24,66 @@ llm=LLM(model=os.environ["MODEL"],api_key=os.environ["OPENROUTER_API_KEY"],base_
 search_tool=SerperDevTool()
 code_tool=CodeInterpreterTool()
 write_tool=FileWriterTool()
+AGENTS_PATH = Path(__file__).parent / "config" / "agents.yaml"
 agents_config=None
-with open("src/codeedu/config/agents.yaml") as file:
-    agents_config=yaml.safe_load(file)
+
+def load_yaml(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+agents_config = load_yaml(AGENTS_PATH)    
+
 
 #planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 #code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-# define agents
+# def build_agent(agent_id, memory=None, tools=None, llm=None):
+#     cfg = agents_config[agent_id]
+#     return Agent(
+#         role=cfg["role"],
+#         goal=cfg["goal"],
+#         backstory=cfg["backstory"],
+#         memory=memory,
+#         verbose=True,
+#         llm=llm,
+#         tools=tools or []
+#     )
+
+chatAgent=Agent(
+    role="Chat Agent",
+    goal="You are a chat agent that can answer questions and help with tasks",
+    backstory="You are a chat agent that can answer questions and help with tasks",
+    memory=True,
+    verbose=True,
+)
+
+
 planner = Agent(
     #config=agents_config['planner'], # type: ignore[index]
     role="Task Planner",
     goal="Responsible for choosing the agents and tasks to according to the input['request'] , the information are including input['agents'] and input['tasks']",
     backstory="You can get information about current agents and tasks from input.You are an advanced AI assistant with vast knowledge spanning multiple disciplines, designed to engage in diverse conversations and provide helpful information",
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=True,  # Default: False
     #tools=[search_tool],  # Optional: List of tools
-    llm=copy.deepcopy(llm),
+    llm=llm,
 )
 
 researcher = Agent(
     config=agents_config['researcher'],
     
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=False,  # Default: False
     tools=[search_tool],  # Optional: List of tools
-    llm=copy.deepcopy(llm)
+    llm=llm
 )
 reporting_analyst = Agent(
     config=agents_config['reporting_analyst'], # type: ignore[index]
     #llm="gpt-4",  # Default: OPENAI_MODEL_NAME or "gpt-4
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=False,  # Default: False
-    llm=copy.deepcopy(llm),
+    llm=llm,
     tools=[write_tool]
 )
 programmer = Agent(
@@ -74,8 +100,9 @@ programmer = Agent(
     ),
     tools=[code_tool, write_tool],
     allow_code_execution=True,
+    memory=True,  # Default: True
     verbose=True,
-    llm=copy.deepcopy(llm),
+    llm=llm,
     allow_delegation=False,
 )
 
@@ -91,58 +118,7 @@ educator = Agent(
 )
 
 
-# class planner(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['planner'], # type: ignore[index]
-#             verbose=True,
-#             tools=[SerperDevTool]
-#         )
 
-
-
-
-# class researcher(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['researcher'], # type: ignore[index]
-#             verbose=True,
-#             tools=[SerperDevTool]
-#         )
-
-
-# class reporting_analyst(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['reporting_analyst'], # type: ignore[index]
-#             verbose=True
-#         )
-
-
-
-# class programmer(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['programmer'], # type: ignore[index]
-#             verbose=True,
-#             allow_code_execution=True
-#         )
-
-
-# class educator(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['educator'], # type: ignore[index]
-#             verbose=True
-#         )
-
-# @agent
-# class executor(Agent):
-#     def __init__(self):
-#         super().__init__(
-#             config=agents_config['Executor'], # type: ignore[index]
-#             verbose=True
-#         )
 
 
     

@@ -1,3 +1,7 @@
+
+
+
+
 planner:
   role: >
     Python Programming Education Planner
@@ -22,7 +26,7 @@ reporting_analyst:
   role: >
     Python Reporting Analyst
   goal: >
-    Create detailed reports based on Python data analysis and research findings
+    Create detailed reports based on Python data analysis and research findings no more than 100 words
   backstory: >
     You're a meticulous analyst with a keen eye for detail. You're known for
     your ability to turn complex data into clear and concise reports, making
