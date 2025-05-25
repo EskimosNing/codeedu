@@ -34,13 +34,26 @@
 
     <!-- 主内容区域 -->
     <el-main class="main-content">
-      <div v-if="selectedDialogue">
-          <chatbot ref="chatbot" :currentDialogue="selectedDialogue" @child-event="getAgentResponse"> 
-          </chatbot>
-      </div>
-      <div v-else>
-          <home @child-event="createNewDialogue">
-          </home>
+      <!--新增 -->
+      <div class="content-wrapper" :class="{ 'split-view': isSplitView }">
+        <!-- 左侧聊天区域 -->
+        <div class="chat-section">
+          <div class="toggle-split-btn" @click="toggleSplit">
+            <i :class="isSplitView ? 'el-icon-close' : 'el-icon-right'"></i>
+          </div>
+          <div v-if="selectedDialogue">
+            <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
+            </chatbot>
+          </div>
+          <div v-else>
+            <home @child-event="createNewDialogue">
+            </home>
+          </div>
+        </div>
+        <!-- 右侧代码区域 -->
+        <div v-if="isSplitView" class="coding-section">
+          <coding />
+        </div>
       </div>
     </el-main>
   </el-container>
@@ -50,12 +63,14 @@
 import Chatbot from './Chatbot.vue'
 import History from "./History.vue"
 import Home from "./Home.vue"
+import Coding from "./Coding.vue"
 import axios from "../api"
 export default {
   components:{
     History,
     Chatbot,
-    Home
+    Home,
+    Coding
   },
   data() {
     return {
@@ -68,6 +83,7 @@ export default {
       selectedDialogue: null,
       selectedDialogueID: null,
       abortController: null,
+      isSplitView: true // 新增
     }
   },
   mounted(){
@@ -94,7 +110,7 @@ export default {
     },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogueID = receivedData.message.id
-      axios.get(`/conversation/${receivedData.message}`).then(response => {
+      axios.get(`/conversation/${this.selectedDialogueID}`).then(response => {
         this.selectedDialogue = response.data
       })
     },
@@ -125,11 +141,18 @@ export default {
       this.abortController = new AbortController()
 
       const res = await fetch(
-        `http://192.168.192.144:5000/answer?message=${encodeURIComponent(receivedData.message)}`,
-        { signal: this.abortController.signal }
+        `http://192.168.192.144:5000/chat`,
+        { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: receivedData.message,
+            conversation_id: this.selectedDialogueID
+          }),
+          signal: this.abortController.signal }
       );
-
-      console.log(this.selectedDialogue[-1])
 
       if (!res.ok) throw new Error('网络请求失败')
 
@@ -164,6 +187,10 @@ export default {
       }
       await processStream()
       this.callscrollToBottom()
+    },
+    // 新增
+    toggleSplit() {
+      this.isSplitView = !this.isSplitView
     },
   }
 }
@@ -287,5 +314,45 @@ export default {
 
 .el-menu {
   border-right: none;
+}
+
+.content-wrapper {
+  height: 100%;
+  transition: all 0.3s;
+}
+
+.content-wrapper.split-view {
+  display: flex;
+  gap: 0px;
+}
+
+.chat-section {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.coding-section {
+  flex: 1;
+  height: 100%;
+  background: #1e1e1e;
+  border-radius: 8px;
+}
+
+.toggle-split-btn {
+  position: absolute;
+  right: 5%;
+  top: 5%;
+  z-index: 100;
+  background: #5c5cde;
+  color: white;
+  padding: 5px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.toggle-split-btn:hover {
+  background: #4e4ec7;
 }
 </style>

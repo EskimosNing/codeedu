@@ -4,10 +4,10 @@
           v-for="(dialogue, index) in Dialogues"
           :key="index"
           class="list-item"
-          :class="{ 'active': currentDialogue === dialogue }"
+          :class="{ 'active': currentDialogue === dialogue.id }"
           @click="selectDialogue(dialogue)"
         >
-            <span class="text">{{dialogue[0]['content']}}</span>
+            <span class="text">{{dialogue.title}}</span>
         </div>
     </div>
 </template>
@@ -20,7 +20,7 @@ export default{
             required: true
         },
         currentDialogue: {
-            type: Array,
+            type: String,
         }
     },
     data() {
