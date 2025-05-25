@@ -47,6 +47,18 @@ def save_conversation(cid, history):
     with open(get_convo_path(cid), 'w') as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
+
+def build_memory_from_history(history):
+    memory = ConversationBufferMemory(return_messages=True)
+
+    # 加载历史记录，创建 memory
+    for item in history:
+        if item['role'] == 'user':
+            memory.chat_memory.add_user_message(item['content'])
+        elif item['role'] == 'assistant':
+            memory.chat_memory.add_ai_message(item['content'])
+    return memory
+
 # 匹配 ANSI 转义序列的正则
 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
@@ -161,6 +173,24 @@ def chat():
     save_conversation(cid, history)
 
     return jsonify({"reply": ai_response,"thought":ai_thought})
+
+@app.route('/submit_code', methods=['POST'])
+def submit_code():
+    data = request.json
+    code = data.get("code", "")
+
+    if not code:
+        return jsonify({"error": "未提交代码"}), 400
+
+    # 通过 CrewAI 调度任务执行
+    crew = build_my_crew()
+    result, suggestion = crew.kickoff(inputs={"code": code})
+
+    return jsonify({
+        "result": result,
+        "suggestions": suggestion
+    })
+
 
 # --- 页面路由 ---
 @app.route("/")
