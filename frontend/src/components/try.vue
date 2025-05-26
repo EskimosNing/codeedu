@@ -262,8 +262,8 @@ export default {
 }
 
 .coding-section {
-  flex: 1;
-  height: 100%;
+  width: 50%;
+  height: 90%;
   background: #1e1e1e;
   border-radius: 8px;
 }

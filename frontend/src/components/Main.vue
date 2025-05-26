@@ -45,7 +45,7 @@
         <!-- 左侧聊天区域 -->
         <div class="chat-section" :style="{width: isSplitView ? splitWidth + '%' : '100%'}">
           <div v-if="selectedDialogue">
-            <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
+            <chatbot ref="chatbot" :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
             </chatbot>
           </div>
           <div v-else>
@@ -110,17 +110,23 @@ export default {
     },
     creatNewChat() {
       this.selectedDialogue = null
+      this.selectedDialogueID = null
     },
-    createNewDialogue(receivedData) {
-      axios.post("/new_conversation",{user_id: "123", message: receivedData.message}).then(response => {
+    async createNewDialogue(receivedData) {
+      await axios.post("/new_conversation",{user_id: "123", message: receivedData.message}).then(response => {
         this.selectedDialogueID = response.data.conversation_id
-        this.dialogueHistory.unshift(this.selectedDialogueID)
+        let temp = {}
+        temp.id = this.selectedDialogueID
+        temp.title = response.data.title
+        console.log(temp.id)
+        this.dialogueHistory.unshift(temp)
       })
       this.selectedDialogue = []
       this.getAgentResponse(receivedData)
     },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogueID = receivedData.message.id
+      console.log(this.selectedDialogueID)
       axios.get(`/conversation/${this.selectedDialogueID}`).then(response => {
         this.selectedDialogue = response.data
       })
@@ -143,7 +149,7 @@ export default {
     async getAgentResponse(receivedData) {
       let temp = {'role':'user', 'content': receivedData.message}
       this.selectedDialogue.push(temp)
-      let ttemp = {'role':'assistant', 'content': '', 'thought': ''}
+      let ttemp = {'role':'assistant', 'content': '', 'thought': '', 'files':[]}
       this.selectedDialogue.push(ttemp)
 
       if (this.abortController) {
@@ -188,6 +194,8 @@ export default {
                   this.selectedDialogue[this.selectedDialogue.length-1]['thought'] += msg.data
               } else if (msg.type === 'result') {
                   this.selectedDialogue[this.selectedDialogue.length-1]['content'] += msg.data
+              } else if (msg.type === 'file_list'){
+                  this.selectedDialogue[this.selectedDialogue.length-1]['files'] = msg.files
               }
               this.callscrollToBottom()
             } catch (err) {
@@ -199,7 +207,7 @@ export default {
       await processStream()
       this.callscrollToBottom()
     },
-    // 新增
+    // coding相关
     toggleSplit() {
       this.isSplitView = !this.isSplitView;
       if (this.isSplitView) {
@@ -385,7 +393,8 @@ export default {
 }
 
 .coding-section {
-  flex: 1;
+  width: 50%;
+  overflow: auto;
   height: 100%;
   background: #202327;
   border-radius: 8px;

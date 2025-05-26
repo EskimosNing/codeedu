@@ -206,4 +206,24 @@ if __name__ == "__main__":
 .coding-container .CodeMirror-selected {
   background: rgba(255, 255, 255, 0.1) !important;
 }
+
+.coding-container::-webkit-scrollbar-track {
+    background: transparent;  /* 关键设置 */
+    border: none;            /* 去除边框 */
+  }
+  
+  /* 滚动条整体样式 */
+.coding-container::-webkit-scrollbar {
+    width: 17px;  /* 仅保留滑块所需宽度 */
+    height: 17px; /* 横向滚动条同理 */
+    background: transparent;  /* 滚动条所在区域透明 */
+  }
+  
+  /* 灰色滑块样式 */
+.coding-container::-webkit-scrollbar-thumb {
+    background: #494a4d;
+    border-radius: 5px;
+    border: 2px solid rgba(255,255,255,0.1); /* 微透明边框增加层次 */
+    background-clip: content-box; /* 防止背景渗透到边框 */
+  }
 </style>
