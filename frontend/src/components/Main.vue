@@ -35,12 +35,15 @@
     <!-- 主内容区域 -->
     <el-main class="main-content">
       <!--新增 -->
-      <div class="content-wrapper" :class="{ 'split-view': isSplitView }">
+      <!-- coding切换按钮 -->
+      <div v-if="!isSplitView" class="coding-toggle-btn" @click="toggleSplit">
+        <i class="el-icon-caret-left"></i>
+        <span>Coding Space</span>
+      </div>
+
+      <div class="split-container">
         <!-- 左侧聊天区域 -->
-        <div class="chat-section">
-          <div class="toggle-split-btn" @click="toggleSplit">
-            <i :class="isSplitView ? 'el-icon-close' : 'el-icon-right'"></i>
-          </div>
+        <div class="chat-section" :style="{width: isSplitView ? splitWidth + '%' : '100%'}">
           <div v-if="selectedDialogue">
             <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
             </chatbot>
@@ -50,9 +53,15 @@
             </home>
           </div>
         </div>
+        <!-- 调整条 -->
+      <div 
+        class="split-handle"
+        @mousedown="startResize"
+        v-if="isSplitView"
+      ></div>
         <!-- 右侧代码区域 -->
-        <div v-if="isSplitView" class="coding-section">
-          <coding />
+        <div v-if="isSplitView" class="coding-section" :style="{width: (100 - splitWidth) + '%'}">
+          <coding @close="toggleSplit" />
         </div>
       </div>
     </el-main>
@@ -83,7 +92,9 @@ export default {
       selectedDialogue: null,
       selectedDialogueID: null,
       abortController: null,
-      isSplitView: true // 新增
+      isSplitView: true, // 新增
+      splitWidth: 50, // 初始宽度比例
+      isResizing: false
     }
   },
   mounted(){
@@ -190,8 +201,28 @@ export default {
     },
     // 新增
     toggleSplit() {
-      this.isSplitView = !this.isSplitView
+      this.isSplitView = !this.isSplitView;
+      if (this.isSplitView) {
+        this.splitWidth = 50; // 打开时重置为默认比例
+      }
     },
+    startResize(e) {
+    this.isResizing = true
+    document.addEventListener('mousemove', this.handleResize)
+    document.addEventListener('mouseup', this.stopResize)
+    },
+    handleResize(e) {
+      if (!this.isResizing) return
+      const container = this.$el.querySelector('.split-container')
+      const rect = container.getBoundingClientRect()
+      const newWidth = ((e.clientX - rect.left) / rect.width) * 100
+      this.splitWidth = Math.max(20, Math.min(80, newWidth)) // 限制在20%-80%之间
+    },
+    stopResize() {
+      this.isResizing = false
+      document.removeEventListener('mousemove', this.handleResize)
+      document.removeEventListener('mouseup', this.stopResize)
+    }
   }
 }
 </script>
@@ -228,6 +259,10 @@ export default {
   justify-content: flex-start;
   height: 200px;
   padding: 10px 0;
+}
+
+.main-content {
+  display: flex;
 }
 
 /* Logo容器 */
@@ -316,18 +351,35 @@ export default {
   border-right: none;
 }
 
-.content-wrapper {
+.split-container {
+  display: flex;
+  position: relative;
   height: 100%;
-  transition: all 0.3s;
+  width: 100%;
 }
 
-.content-wrapper.split-view {
-  display: flex;
-  gap: 0px;
+/* 调整条样式 */
+.split-handle {
+  width: 3px;
+  background: #4a4a4a;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+}
+
+.split-handle:hover,
+.split-handle:active {
+  background: #5c5cde;
+}
+
+.chat-section.split-view {
+  width: 50%;
+  position: relative;
+  height: 100%;
 }
 
 .chat-section {
-  flex: 1;
+  width: 100%;
   position: relative;
   height: 100%;
 }
@@ -335,24 +387,32 @@ export default {
 .coding-section {
   flex: 1;
   height: 100%;
-  background: #1e1e1e;
+  background: #202327;
   border-radius: 8px;
 }
 
-.toggle-split-btn {
+/* 新增coding切换按钮样式 */
+.coding-toggle-btn {
   position: absolute;
-  right: 5%;
-  top: 5%;
+  right: 20px;
+  top: 20px;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
   background: #5c5cde;
   color: white;
-  padding: 5px;
-  border-radius: 50%;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
-.toggle-split-btn:hover {
+.coding-toggle-btn:hover {
   background: #4e4ec7;
+}
+
+.coding-toggle-btn i {
+  margin-right: 6px;
+  font-size: 16px;
 }
 </style>

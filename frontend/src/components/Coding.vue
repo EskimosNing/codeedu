@@ -1,34 +1,35 @@
 <template>
   <div class="coding-container">
     <div class="toolbar">
-      <el-button-group>
-        <el-button title="撤销" @click="handleUndo" class="tool-btn">
-          <i class="el-icon-refresh-left"></i>
-        </el-button>
-        <el-button title="重做" @click="handleRedo" class="tool-btn">
-          <i class="el-icon-refresh-right"></i>
-        </el-button>
-        <el-button title="复制" @click="handleCopy" class="tool-btn">
-          <i class="el-icon-document-copy"></i>
-        </el-button>
-        <el-button 
-          type="primary" 
-          @click="$emit('send', code)"
-          class="send-btn"
-        >
-          发送 <i class="el-icon-s-promotion"></i>
-        </el-button>
-      </el-button-group>
+      <div class="toolbar-content">
+        <!-- 关闭按钮 -->
+        <div class="close-btn" @click="$emit('close')">
+          <i class="el-icon-close"></i>
+        </div>
+        <!-- 功能按钮组 -->
+        <div class="button-group">
+          <el-button type="text" title="清空" @click="handleClear" class="icon-btn">
+            <i class="el-icon-delete"></i>
+          </el-button>
+          <el-button type="text" title="撤销" @click="handleUndo" class="icon-btn">
+            <i class="el-icon-refresh-left"></i>
+          </el-button>
+          <el-button type="text" title="重做" @click="handleRedo" class="icon-btn">
+            <i class="el-icon-refresh-right"></i>
+          </el-button>
+          <el-button type="text" title="复制" @click="handleCopy" class="icon-btn">
+            <i class="el-icon-copy-document"></i>
+          </el-button>
+          <el-button type="text" class="icon-btn" @click="$emit('send', code)" title="发送">
+            <i class="el-icon-s-promotion"></i>
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <!-- 使用vue-codemirror封装组件 -->
-    <codemirror
-      ref="cmEditor"
-      v-model="code"
-      :options="cmOptions"
-      @ready="onEditorReady"
-      class="fullscreen-editor"
-    ></codemirror>
+    <codemirror ref="cmEditor" v-model="code" :options="cmOptions" @ready="onEditorReady" class="fullscreen-editor">
+    </codemirror>
   </div>
 </template>
 
@@ -67,12 +68,17 @@ export default {
     onEditorReady(cm) {
       this.editor = cm
       // 初始化示例代码
-      this.code = `# 欢迎使用代码编辑器
+      this.code = 
+      `# 欢迎使用代码编辑器
 def hello():
     print("Hello World!")
     
 if __name__ == "__main__":
     hello()`
+    },
+    handleClear() {
+      this.code = '';
+      this.$message.success('已清空代码');
     },
     handleUndo() {
       this.editor.execCommand('undo')
@@ -101,17 +107,48 @@ if __name__ == "__main__":
   overflow: hidden;
 }
 
-.toolbar {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  background: #202327;
-  border-bottom: 1px solid #333;
-  z-index: 2;
-}
-
 .fullscreen-editor {
   flex: 1;
   min-height: 0;
+}
+
+.toolbar {
+  padding: 8px 16px;
+  background: #202327;
+  border-bottom: 1px solid #333;
+}
+
+.toolbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.close-btn {
+  color: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 2px 8px;
+}
+
+.close-btn:hover {
+  color: #5c5cde;
+}
+
+.icon-btn {
+  color: #fff;
+  padding: 6px !important;
+  font-size: 18px !important;
+}
+
+.icon-btn:hover {
+  color: #5c5cde;
 }
 </style>
 
@@ -128,7 +165,7 @@ if __name__ == "__main__":
 /* 替代原有padding */
 /* 强制左对齐 */
 .coding-container .CodeMirror-lines {
-  padding: 12px 0 !important;
+  padding: 10px 0 !important;
   text-align: left !important;
 }
 
@@ -136,13 +173,15 @@ if __name__ == "__main__":
 .coding-container .CodeMirror-gutters {
   background: #202327 !important;
   border-right: 1px solid #333 !important;
-  left: 0 !important; /* 强制左侧对齐 */
+  left: 0 !important;
+  /* 强制左侧对齐 */
 }
 
 /* 行号样式 */
 .coding-container .CodeMirror-linenumber {
   color: #666 !important;
-  min-width: 40px !important; /* 固定行号宽度 */
+  min-width: 40px !important;
+  /* 固定行号宽度 */
   padding-right: 10px !important;
   text-align: right !important;
 }
@@ -150,14 +189,14 @@ if __name__ == "__main__":
 /* 移除左边距 */
 /* 添加左右内边距 */
 .coding-container .CodeMirror-scroll {
-  margin-left: 0 !important; 
-  padding: 0 15px !important; 
+  margin-left: 0 !important;
+  padding: 0 15px !important;
 }
 
 /* 代码区左内边距 */
-/* .coding-container .CodeMirror-code {
-  padding-left: 10px !important; 
-} */
+.coding-container .CodeMirror-code {
+  padding-left: 0px !important;
+}
 
 /* 光标和选中样式 */
 .coding-container .CodeMirror-cursor {
@@ -165,6 +204,6 @@ if __name__ == "__main__":
 }
 
 .coding-container .CodeMirror-selected {
-  background: rgba(255,255,255,0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 </style>
