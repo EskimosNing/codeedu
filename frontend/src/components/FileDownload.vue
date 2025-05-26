@@ -71,7 +71,7 @@ export default {
   display: inline-flex;
   align-items: center;
   padding: 10px 12px;
-  border: 3px solid #ebeef5;
+  border: 3px solid #838383;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -93,7 +93,7 @@ export default {
 .file-name {
   font-size: 18px;
   font-weight: bold;
-  color: #303133;
+  color: #eaebec;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

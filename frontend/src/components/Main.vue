@@ -35,14 +35,13 @@
     <!-- 主内容区域 -->
     <el-main class="main-content">
       <!--新增 -->
-      <div class="content-wrapper" :class="{ 'split-view': isSplitView }">
         <!-- 左侧聊天区域 -->
-        <div class="chat-section">
+        <div class="chat-section" :class="{ 'split-view': isSplitView }">
           <div class="toggle-split-btn" @click="toggleSplit">
             <i :class="isSplitView ? 'el-icon-close' : 'el-icon-right'"></i>
           </div>
           <div v-if="selectedDialogue">
-            <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
+            <chatbot ref="chatbot" :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
             </chatbot>
           </div>
           <div v-else>
@@ -54,7 +53,6 @@
         <div v-if="isSplitView" class="coding-section">
           <coding />
         </div>
-      </div>
     </el-main>
   </el-container>
 </template>
@@ -99,17 +97,23 @@ export default {
     },
     creatNewChat() {
       this.selectedDialogue = null
+      this.selectedDialogueID = null
     },
-    createNewDialogue(receivedData) {
-      axios.post("/new_conversation",{user_id: "123", message: receivedData.message}).then(response => {
+    async createNewDialogue(receivedData) {
+      await axios.post("/new_conversation",{user_id: "123", message: receivedData.message}).then(response => {
         this.selectedDialogueID = response.data.conversation_id
-        this.dialogueHistory.unshift(this.selectedDialogueID)
+        let temp = {}
+        temp.id = this.selectedDialogueID
+        temp.title = response.data.title
+        console.log(temp.id)
+        this.dialogueHistory.unshift(temp)
       })
       this.selectedDialogue = []
       this.getAgentResponse(receivedData)
     },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogueID = receivedData.message.id
+      console.log(this.selectedDialogueID)
       axios.get(`/conversation/${this.selectedDialogueID}`).then(response => {
         this.selectedDialogue = response.data
       })
@@ -132,7 +136,7 @@ export default {
     async getAgentResponse(receivedData) {
       let temp = {'role':'user', 'content': receivedData.message}
       this.selectedDialogue.push(temp)
-      let ttemp = {'role':'assistant', 'content': '', 'thought': ''}
+      let ttemp = {'role':'assistant', 'content': '', 'thought': '', 'files':[]}
       this.selectedDialogue.push(ttemp)
 
       if (this.abortController) {
@@ -177,6 +181,8 @@ export default {
                   this.selectedDialogue[this.selectedDialogue.length-1]['thought'] += msg.data
               } else if (msg.type === 'result') {
                   this.selectedDialogue[this.selectedDialogue.length-1]['content'] += msg.data
+              } else if (msg.type === 'file_list'){
+                  this.selectedDialogue[this.selectedDialogue.length-1]['files'] = msg.files
               }
               this.callscrollToBottom()
             } catch (err) {
@@ -228,6 +234,10 @@ export default {
   justify-content: flex-start;
   height: 200px;
   padding: 10px 0;
+}
+
+.main-content {
+  display: flex;
 }
 
 /* Logo容器 */
@@ -316,26 +326,23 @@ export default {
   border-right: none;
 }
 
-.content-wrapper {
+.chat-section.split-view {
+  width: 50%;
+  position: relative;
   height: 100%;
-  transition: all 0.3s;
-}
-
-.content-wrapper.split-view {
-  display: flex;
-  gap: 0px;
 }
 
 .chat-section {
-  flex: 1;
+  width: 100%;
   position: relative;
   height: 100%;
 }
 
 .coding-section {
-  flex: 1;
+  width: 50%;
+  overflow: auto;
   height: 100%;
-  background: #1e1e1e;
+  background: #202327;
   border-radius: 8px;
 }
 

@@ -28,6 +28,14 @@
         >
           <strong>{{ msg.content }}</strong>
         </div>
+        <div class="files">
+          <div class="file"
+            v-for="(file, i) in msg.files"
+            :key="i"
+          >
+            <file-download :fileName="file.filename" :fileUrl="`http://192.168.192.144:5000/${file.download_url}`"></file-download>
+          </div>
+        </div>
       </div>
     </div>
     <!-- 发消息部分 -->
@@ -56,8 +64,12 @@
 
 <script>
 import axios from "../api";
+import FileDownload from "./FileDownload.vue"
 export default {
   name: 'ChatBot',
+  components:{
+    FileDownload
+  },
   // isDisabled: !reportGeneration,
   props:  {
     currentDialogue: {
@@ -355,6 +367,16 @@ textarea:focus {
 .el-button.recording {
   background-color: #5c5cde;
   color: white;
+}
+.files {
+  margin-top: 20px;
+}
+.file {
+  margin-left:18%;
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* 垂直居中 */
+  justify-content: flex-start; /* 水平左对齐 */
 }
 @keyframes pulse {
   0% {
