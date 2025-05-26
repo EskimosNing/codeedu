@@ -29,7 +29,6 @@
 
     <!-- 主内容区域 -->
     <el-main class="main-content">
-      <!--新增 -->
       <!-- coding切换按钮 -->
       <div v-if="!isSplitView" class="coding-toggle-btn" @click="toggleSplit">
         <i class="el-icon-caret-left"></i>
@@ -83,8 +82,8 @@ export default {
       selectedDialogue: null,
       selectedDialogueID: null,
       abortController: null,
-      isSplitView: true, // 新增
-      splitWidth: 50, // 初始宽度比例
+      isSplitView: true,
+      splitWidth: 50,
       isResizing: false
     }
   },
