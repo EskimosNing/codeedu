@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-Simulates a Rock-Paper-Scissors game between two players for a given number of rounds. Write the script to a .py file. Run the script and write the the outcome to a json file in current dir.
-I need a implementation of a ranking algorithm in python to a .py file, Run the file and write the the outcome to a json file in current dir.,Then teacher me how optimize the complexity of the code, summarize the knowledge and save as report.md
-Search the PyTorch documentation, and teach me about Tensors, not need program no more than 100 words.
-=======
 Simulates a Rock-Paper-Scissors game between two players for a given number of rounds. Write the script to a .py file. Run the script and write the the outcome to a json file in output dir.
 I need a implementation of a ranking algorithm in python to a .py file, Run the file and write the the outcome to a json file.,Then teacher me how optimize the complexity of the code, summarize the knowledge and save as report.md
 Search the PyTorch documentation and give me a report, and teach me about Tensors, not need program no more than 100 words.
@@ -52,4 +47,3 @@ educator 应接续前面内容继续输出。
 “帮我写个代码计算圆的面积。”
 
 简单任务，测试是否能生成并保存 .py 文件。
->>>>>>> 5b55d15 (update app.py thought log text ascii)

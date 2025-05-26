@@ -16,23 +16,42 @@ import uuid
 import glob
 from crewai import LLM
 import os
+import html
+from flask import send_from_directory
 from flask_cors import CORS
-from agent_pool import researcher,programmer,reporting_analyst,planner,educator
+from agent_pool import planner, researcher, reporting_analyst, programmer, educator,agents_config
 from task import distribute_task, code_task, reporting_task, tasks_config,research_task,education_task
+
 #src.codeedu.task 
 from pathlib import Path
 
 app = Flask(__name__)
 CORS(app)
+OUTPUT_DIR =Path(__file__).parent / "output"
 STORAGE_PATH = Path(__file__).parent / "conversations" 
 #print(STORAGE_PATH)
 #print("**********")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(STORAGE_PATH, exist_ok=True)
   # user_id or convo_id → {'crew': ..., 'memory': ..., 'history': [...]}
 # 队列存储日志
 log_queue = queue.Queue()
 
 
+agents_dict = {
+  'researcher': {"id": "researcher", "configuration": agents_config["researcher"], "agent": researcher},
+  'reporting_analyst': {"id": "reporting_analyst", "configuration": agents_config["reporting_analyst"], "agent": reporting_analyst},
+  'programmer': {"id": "programmer", "configuration": agents_config["programmer"], "agent": programmer},
+  'educator': {"id": "educator", "configuration": agents_config["educator"], "agent": educator},
+  #'executor': {"id": "executor", "configuration": agents_config["executor"], "agent": executor},
+}
+#print("agents_dict: ",agents_dict)
+tasks_dict = {
+  'research_task': {"id": "research_task", "configuration": tasks_config["research_task"], "task": research_task},
+  'reporting_task': {"id": "reporting_task", "configuration": tasks_config["reporting_task"], "task": reporting_task},
+  'code_task': {"id": "code_task", "configuration": tasks_config["code_task"], "task": code_task},
+  'education_task': {"id": "education_task", "configuration": tasks_config["education_task"], "task": education_task},
+}
 # --- 工具函数 ---
 # 获取对话的路径
 def get_convo_path(cid):
@@ -56,7 +75,7 @@ session_store = {}
 
 def get_or_create_session(conversation_id):
     if conversation_id not in session_store:
-        print("####################################")
+   
         crew = build_my_crew()
         session_store[conversation_id] = {
             "crew": crew,
@@ -78,14 +97,12 @@ def get_or_create_session(conversation_id):
 
 # 匹配 ANSI 转义序列的正则
 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-
+#box_drawing = re.compile(r'[─╮╯╰│╭╮╯╰]+')
 # 清除颜色控制字符
 def strip_ansi(text):
     return ansi_escape.sub('', text)
 
 
-<<<<<<< HEAD:src/codeedu/app copy.py
-=======
 
 # def clean_for_json(text: str) -> str:
 #     """清理 ANSI 控制符、替换双引号、转义换行"""
@@ -98,7 +115,6 @@ def strip_ansi(text):
 #     text = text.replace('\n', '\\n')        # 转义换行
 #     return text
 
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
 class StreamToQueue(io.StringIO):
     def write(self, msg):
         if msg.strip():  # 避免空行
@@ -111,12 +127,9 @@ class WordStream(io.StringIO):
         self.queue = queue
         self.buffer = ""
         self.result_buffer = ""
+        self.thought_buffer = ""
 
     def write(self, s):
-<<<<<<< HEAD:src/codeedu/app copy.py
-        self.buffer += s
-        self.result_buffer += s
-=======
         
 
         # 安全清洗并保存到思考缓冲区
@@ -136,7 +149,6 @@ class WordStream(io.StringIO):
             self.result_buffer += s
             self.thought_buffer += s
 
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
         words = re.split(r'(\s+)', self.buffer)
         self.buffer = ""
         for i, word in enumerate(words):
@@ -149,8 +161,32 @@ class WordStream(io.StringIO):
                     self.queue.put({"type": "thought", "data": " "})
                 else:
                     self.queue.put({"type": "thought", "data": word})
+                    #self.thought_buffer += word  #  收集思考过程
     def get_result(self):
-        return self.result_buffer
+        return strip_ansi(self.result_buffer)
+    def get_thought(self):
+        return strip_ansi(self.thought_buffer)
+
+def scan_output_files():
+    output_dir = Path("output")
+    return set(str(f) for f in output_dir.glob("*") if f.is_file())
+# def extract_visible_files(result_text: str) -> list[dict]:
+#     try:
+#         data = json.loads(result_text)
+#         if isinstance(data, dict) and isinstance(data.get("files"), list):
+#             #print("download_url:", f"/output/{f['filename']}")
+#             return [
+#                 {
+#                     "filename": f["filename"],
+#                     "download_url": f"/output/{f['filename']}"
+#                 }
+#                 for f in data["files"]
+#                 if f.get("visible", True) and "filename" in f
+#             ]
+#     except Exception as e:
+#         print("文件解析失败:", e)
+#     return []
+
 
 # 实时运行 crew 并把输出放到队列中
 def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
@@ -161,11 +197,10 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
     word_stream = WordStream(log_queue)
     sys.stdout = word_stream
 
+    files_before = set(scan_output_files())  # 执行前文件列表
     def run():
         try:
             result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
-<<<<<<< HEAD:src/codeedu/app copy.py
-=======
             # print("####################planner##########")
             # print(result.raw)
             parsed = json.loads(result.raw)  # 把字符串变成 dict
@@ -174,7 +209,6 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
             session["final_result"] = json.dumps(parsed, ensure_ascii=False)
             #raw_output = result.raw
             #session["final_result"] = raw_output
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
             n = 3  # 每3个字符为一块
             for i in range(0, len(pretty_json), n):
                 chunk = pretty_json[i:i+n]
@@ -182,7 +216,9 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
             #print("RESULT:", result)
             #log_queue.put({"type": "result", "data": result.raw})
         except Exception as e:
+            err = f"[ERROR] {str(e)}"
             log_queue.put({"type": "result", "data": f"[ERROR] {str(e)}"})
+            session["final_result"] = err
 
 
     thread = threading.Thread(target=run)
@@ -198,20 +234,15 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
                     yield json.dumps(item, ensure_ascii=False) + "\n"
                 else:
                     yield strip_ansi(str(item)) #+ "\n"
-                #yield f"data: {line}\n\n"  # Server-Sent Events 格式
-                #yield f"{json.dumps(item)}"  # 每行为一条 JSON
+
             except queue.Empty:
                 continue
-        #thread.join()
-        #thread.close()  ################
+
 
     finally:
         # 还原 stdout
         sys.stdout = original_stdout
         # 获取最终生成结果并存入内存 + history
-<<<<<<< HEAD:src/codeedu/app copy.py
-        final_result = word_stream.get_result()
-=======
         #print("####################excu##########")
         #print(session["final_result"])
         final_result = session.get("final_result", "[EMPTY]")
@@ -250,15 +281,10 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
                     "content":  strip_ansi(final_result),
                     "thought": strip_ansi(final_thought)
             })
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
         #session["memory"].chat_memory.add_ai_message(final_result)
-        #session["history"].append({"role": "assistant", "content": final_result})
-        session["history"].append({"role": "assistant", "content": final_result})
-       
+
         save_conversation(cid, session["history"])
 
-<<<<<<< HEAD:src/codeedu/app copy.py
-=======
 def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
     original_stdout = sys.stdout
     word_stream = WordStream(log_queue)
@@ -301,7 +327,6 @@ def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
 
 
 
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
 
 
 def build_my_crew():
@@ -317,14 +342,15 @@ def build_my_crew():
 
 # def send_file(path):
 #     return send_from_directory(STORAGE_PATH, path)
-
+def format_history(history):
+    return "\n".join([
+        f"{msg['role']}: {msg['content']}" for msg in history
+    ])
 # 发送消息并更新对话历史
 @app.route('/chat', methods=['POST'])
 def chat():
     cid = request.json['conversation_id']
-    #print(cid)
-    #print("*********")
-    message = request.json['message']
+    message = request.json['message'].strip()
     session = get_or_create_session(cid)
     #memory = session["memory"]
     crew = session["crew"]
@@ -334,13 +360,7 @@ def chat():
 
     session["history"].append({"role": "user", "content": message})
     save_conversation(cid, session["history"])
-    #history.append({"role": "user", "content": message})
-    # 加入内存
-    #memory.chat_memory.add_user_message(message)
 
-<<<<<<< HEAD:src/codeedu/app copy.py
-    # 调用 Crew 执行自然语言对话，并返回
-=======
     
 
     planner_inputs = {
@@ -403,38 +423,29 @@ def chat():
             cid=cid
         )
 
->>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
     return Response(
-        stream_with_context(run_crewai_and_stream(crew, {'question': message},session,cid)),
+        stream_with_context(multi_stage_streaming()),
         mimetype="text/plain"
     )
-    # result = crew.kickoff(inputs={'question': message})
-    # memory.chat_memory.add_ai_message(result.raw)
-    # history.append({"role": "assistant", "content": result.raw})
 
-    # # 创建 AI 响应
-    # #ai_response = "AI 的回答: " + message  # 这里只是简单的回显消息，可以用 CrewAI 代替
-    # #ai_thought = "AI 的思考: " + message  # 这里只是简单的回显消息，可以用 CrewAI 代替
-    # #history.append({"role": "assistant", "content": result.raw,"thought":ai_thought})
-
-    # # 保存更新后的历史
-    # save_conversation(cid, history)
-
-    # #return jsonify({"reply": result.raw,"thought":ai_thought})
-    # return jsonify({"reply": result.raw})
+@app.route('/output/<filename>', methods=['GET'])
+def download_output_file(filename):
+    return send_from_directory('output', filename, as_attachment=True)
 
 @app.route("/upload_code", methods=["POST"])
 def upload_code():
     file = request.files["file"]
     cid = request.form["conversation_id"]
-
     session = get_or_create_session(cid)
-    memory = session["memory"]
 
+    # 文件注入到历史
     code = file.read().decode("utf-8")
-    memory.chat_memory.add_user_message(f"这是用户上传的代码：\n```python\n{code}\n```")
+    code_msg = f"用户上传了一段代码如下：\n```python\n{code}\n```"
+    session["history"].append({"role": "user", "content": code_msg})
+    save_conversation(cid, session["history"])
 
-    return jsonify({"message": "代码已添加到上下文中。"})
+    return jsonify({"message": "代码已注入上下文成功"})
+
 
 
 @app.route('/submit_code', methods=['POST'])

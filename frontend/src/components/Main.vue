@@ -1,45 +1,48 @@
 <template>
   <el-container class="main-container">
     <!-- 侧边栏区域 -->
-    <el-aside :width="asideWidth" class="aside-container">
+    <el-aside 
+      :width="asideWidth"
+      class="aside-container"
+    >
       <!-- 折叠按钮 -->
-      <div class="aside-header" :class="{ collapsed: isCollapse }">
+      <div class="aside-header" :class="{ collapsed:isCollapse }">
         <div class="logo-wrapper">
-          <img :src="isCollapse ? require('../assets/Simple_IMCL_logo.png') : require('../assets/IMCL_logo_grey.png')"
-            class="logo" :class="{ 'small-logo': isCollapse }">
+          <img
+            :src="isCollapse ? require('../assets/Simple_IMCL_logo.png') : require('../assets/IMCL_logo_grey.png')"
+            class="logo"
+            :class="{ 'small-logo': isCollapse }"
+          >
         </div>
         <div class="toggle-btn" @click="toggleCollapse">
           <i :class="isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold'"></i>
         </div>
-      </div>
+      </div>        
 
       <div class="button-container" v-if="!isCollapse">
-        <el-button class="NewChatButton" @click="creatNewChat">
-          <i class="el-icon-chat-line-square"></i>
-          新建对话
-        </el-button>
+          <el-button class="NewChatButton" @click="creatNewChat">
+            <i class="el-icon-chat-line-square"></i>
+            新建对话
+          </el-button>
       </div>
 
       <div class="history-container" v-if="!isCollapse">
-        <history :Dialogues="dialogueHistory" :currentDialogue="selectedDialogueID"
-          @child-event="handleSelectedDialogue">
-        </history>
+          <history :Dialogues="dialogueHistory" :currentDialogue="selectedDialogueID" @child-event="handleSelectedDialogue">
+          </history>
       </div>
     </el-aside>
 
     <!-- 主内容区域 -->
     <el-main class="main-content">
-      <!-- coding切换按钮 -->
-      <div v-if="!isSplitView" class="coding-toggle-btn" @click="toggleSplit">
-        <i class="el-icon-caret-left"></i>
-        <span>Coding Space</span>
-      </div>
-
-      <div class="split-container">
+      <!--新增 -->
+      <div class="content-wrapper" :class="{ 'split-view': isSplitView }">
         <!-- 左侧聊天区域 -->
-        <div class="chat-section" :style="{ width: isSplitView ? splitWidth + '%' : '100%' }">
+        <div class="chat-section">
+          <div class="toggle-split-btn" @click="toggleSplit">
+            <i :class="isSplitView ? 'el-icon-close' : 'el-icon-right'"></i>
+          </div>
           <div v-if="selectedDialogue">
-            <chatbot ref="chatbot" :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
+            <chatbot :currentDialogue="selectedDialogue" @child-event="getAgentResponse">
             </chatbot>
           </div>
           <div v-else>
@@ -47,11 +50,9 @@
             </home>
           </div>
         </div>
-        <!-- 调整条 -->
-        <div class="split-handle" @mousedown="startResize" v-if="isSplitView"></div>
         <!-- 右侧代码区域 -->
-        <div v-if="isSplitView" class="coding-section" :style="{ width: (100 - splitWidth) + '%' }">
-          <coding @close="toggleSplit" />
+        <div v-if="isSplitView" class="coding-section">
+          <coding />
         </div>
       </div>
     </el-main>
@@ -65,7 +66,7 @@ import Home from "./Home.vue"
 import Coding from "./Coding.vue"
 import axios from "../api"
 export default {
-  components: {
+  components:{
     History,
     Chatbot,
     Home,
@@ -82,12 +83,10 @@ export default {
       selectedDialogue: null,
       selectedDialogueID: null,
       abortController: null,
-      isSplitView: true,
-      splitWidth: 50,
-      isResizing: false
+      isSplitView: true // 新增
     }
   },
-  mounted() {
+  mounted(){
     axios.get("/conversations").then(response => {
       this.dialogueHistory = response.data
     })
@@ -100,23 +99,17 @@ export default {
     },
     creatNewChat() {
       this.selectedDialogue = null
-      this.selectedDialogueID = null
     },
-    async createNewDialogue(receivedData) {
-      await axios.post("/new_conversation", { user_id: "123", message: receivedData.message }).then(response => {
+    createNewDialogue(receivedData) {
+      axios.post("/new_conversation",{user_id: "123", message: receivedData.message}).then(response => {
         this.selectedDialogueID = response.data.conversation_id
-        let temp = {}
-        temp.id = this.selectedDialogueID
-        temp.title = response.data.title
-        console.log(temp.id)
-        this.dialogueHistory.unshift(temp)
+        this.dialogueHistory.unshift(this.selectedDialogueID)
       })
       this.selectedDialogue = []
       this.getAgentResponse(receivedData)
     },
     handleSelectedDialogue(receivedData) {
       this.selectedDialogueID = receivedData.message.id
-      console.log(this.selectedDialogueID)
       axios.get(`/conversation/${this.selectedDialogueID}`).then(response => {
         this.selectedDialogue = response.data
       })
@@ -137,9 +130,9 @@ export default {
     //   })
     // },
     async getAgentResponse(receivedData) {
-      let temp = { 'role': 'user', 'content': receivedData.message }
+      let temp = {'role':'user', 'content': receivedData.message}
       this.selectedDialogue.push(temp)
-      let ttemp = { 'role': 'assistant', 'content': '', 'thought': '', 'files': [] }
+      let ttemp = {'role':'assistant', 'content': '', 'thought': ''}
       this.selectedDialogue.push(ttemp)
 
       if (this.abortController) {
@@ -149,7 +142,7 @@ export default {
 
       const res = await fetch(
         `http://192.168.192.144:5000/chat`,
-        {
+        { 
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -158,8 +151,7 @@ export default {
             message: receivedData.message,
             conversation_id: this.selectedDialogueID
           }),
-          signal: this.abortController.signal
-        }
+          signal: this.abortController.signal }
       );
 
       if (!res.ok) throw new Error('网络请求失败')
@@ -182,11 +174,9 @@ export default {
             try {
               const msg = JSON.parse(line)
               if (msg.type === 'thought') {
-                this.selectedDialogue[this.selectedDialogue.length - 1]['thought'] += msg.data
+                  this.selectedDialogue[this.selectedDialogue.length-1]['thought'] += msg.data
               } else if (msg.type === 'result') {
-                this.selectedDialogue[this.selectedDialogue.length - 1]['content'] += msg.data
-              } else if (msg.type === 'file_list') {
-                this.selectedDialogue[this.selectedDialogue.length - 1]['files'] = msg.files
+                  this.selectedDialogue[this.selectedDialogue.length-1]['content'] += msg.data
               }
               this.callscrollToBottom()
             } catch (err) {
@@ -198,30 +188,10 @@ export default {
       await processStream()
       this.callscrollToBottom()
     },
-    // coding相关
+    // 新增
     toggleSplit() {
-      this.isSplitView = !this.isSplitView;
-      if (this.isSplitView) {
-        this.splitWidth = 50; // 打开时重置为默认比例
-      }
+      this.isSplitView = !this.isSplitView
     },
-    startResize(e) {
-      this.isResizing = true
-      document.addEventListener('mousemove', this.handleResize)
-      document.addEventListener('mouseup', this.stopResize)
-    },
-    handleResize(e) {
-      if (!this.isResizing) return
-      const container = this.$el.querySelector('.split-container')
-      const rect = container.getBoundingClientRect()
-      const newWidth = ((e.clientX - rect.left) / rect.width) * 100
-      this.splitWidth = Math.max(20, Math.min(80, newWidth)) // 限制在20%-80%之间
-    },
-    stopResize() {
-      this.isResizing = false
-      document.removeEventListener('mousemove', this.handleResize)
-      document.removeEventListener('mouseup', this.stopResize)
-    }
   }
 }
 </script>
@@ -253,15 +223,11 @@ export default {
 }
 
 .aside-header.collapsed {
-  flex-direction: column;
+  flex-direction:column;
   align-items: center;
   justify-content: flex-start;
   height: 200px;
   padding: 10px 0;
-}
-
-.main-content {
-  display: flex;
 }
 
 /* Logo容器 */
@@ -279,8 +245,7 @@ export default {
 .small-logo {
   width: 42px;
   height: auto;
-  margin-bottom: 10px;
-  /* 为按钮腾出空间 */
+  margin-bottom: 10px; /* 为按钮腾出空间 */
 }
 
 .side-menu:not(.el-menu--collapse) {
@@ -351,69 +316,43 @@ export default {
   border-right: none;
 }
 
-.split-container {
+.content-wrapper {
+  height: 100%;
+  transition: all 0.3s;
+}
+
+.content-wrapper.split-view {
   display: flex;
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-/* 调整条样式 */
-.split-handle {
-  width: 3px;
-  background: #4a4a4a;
-  cursor: col-resize;
-  position: relative;
-  z-index: 10;
-}
-
-.split-handle:hover,
-.split-handle:active {
-  background: #5c5cde;
-}
-
-.chat-section.split-view {
-  width: 50%;
-  position: relative;
-  height: 100%;
+  gap: 0px;
 }
 
 .chat-section {
-  width: 100%;
+  flex: 1;
   position: relative;
   height: 100%;
 }
 
 .coding-section {
-  width: 50%;
-  overflow: auto;
+  flex: 1;
   height: 100%;
-  background: #202327;
+  background: #1e1e1e;
   border-radius: 8px;
 }
 
-/* 新增coding切换按钮样式 */
-.coding-toggle-btn {
+.toggle-split-btn {
   position: absolute;
-  right: 20px;
-  top: 20px;
+  right: 5%;
+  top: 5%;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
   background: #5c5cde;
   color: white;
-  border-radius: 20px;
+  padding: 5px;
+  border-radius: 50%;
   cursor: pointer;
   transition: all 0.3s;
 }
 
-.coding-toggle-btn:hover {
+.toggle-split-btn:hover {
   background: #4e4ec7;
-}
-
-.coding-toggle-btn i {
-  margin-right: 6px;
-  font-size: 16px;
 }
 </style>

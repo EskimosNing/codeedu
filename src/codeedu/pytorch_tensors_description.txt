@@ -1,1 +1,0 @@
-Tensors are the fundamental data structure of PyTorch, similar to NumPy arrays, but can also run on GPUs to accelerate computation. A Tensor can be a scalar (0-D), vector (1-D), matrix (2-D), or higher-dimensional structure. They support automatic differentiation, making them essential for building and training neural networks.

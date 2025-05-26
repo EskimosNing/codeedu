@@ -24,9 +24,11 @@ from pathlib import Path
 
 app = Flask(__name__)
 CORS(app)
+OUTPUT_DIR =Path(__file__).parent /  "output"
 STORAGE_PATH = Path(__file__).parent / "conversations" 
 #print(STORAGE_PATH)
 #print("**********")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(STORAGE_PATH, exist_ok=True)
   # user_id or convo_id → {'crew': ..., 'memory': ..., 'history': [...]}
 # 队列存储日志
@@ -132,7 +134,9 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
     def run():
         try:
             result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
-            #final_result = result.output
+            
+            final_output = result.raw
+            session["final_result"] = final_output
             n = 3  # 每3个字符为一块
             for i in range(0, len(result.raw), n):
                 chunk = result.raw[i:i+n]
@@ -140,7 +144,9 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
             #print("RESULT:", result)
             #log_queue.put({"type": "result", "data": result.raw})
         except Exception as e:
+            err = f"[ERROR] {str(e)}"
             log_queue.put({"type": "result", "data": f"[ERROR] {str(e)}"})
+            session["final_result"] = err
 
 
     thread = threading.Thread(target=run)
@@ -165,10 +171,7 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
         # 还原 stdout
         sys.stdout = original_stdout
         # 获取最终生成结果并存入内存 + history
-        final_result = word_stream.get_result()
-        print("####result####")
-        print(final_result)
-        print("###########")
+        final_result = session.get("final_result", "[EMPTY]")
         final_thought = word_stream.get_thought()
         #session["memory"].chat_memory.add_ai_message(final_result)
         #session["history"].append({"role": "assistant", "content": final_result})
@@ -176,8 +179,30 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
        
         save_conversation(cid, session["history"])
 
+def build_manager_crew():
+    return Crew(
+        agents=[planner],
+        tasks=[distribute_task],
+        process=Process.sequential,
+        verbose=True
+    )
 
+def build_execution_crew(agent_list, task_list):
+    return Crew(
+        agents=agent_list,
+        tasks=task_list,
+        process=Process.sequential,
+        verbose=True
+    )
+def format_history(history):
+    return "\n".join([f"{item['role']}: {item['content']}" for item in history])
 
+# inputs = {
+#     "request": message,
+#     "history": format_history(session["history"]),
+#     "agents": json.dumps({...}),
+#     "tasks": json.dumps({...})
+# }
 def build_my_crew():
     # 创建内存并共享给所有 agent
     #memory = build_memory_from_history(history)
@@ -196,8 +221,7 @@ def build_my_crew():
 @app.route('/chat', methods=['POST'])
 def chat():
     cid = request.json['conversation_id']
-    #print(cid)
-    #print("*********")
+
     message = request.json['message']
     session = get_or_create_session(cid)
     #memory = session["memory"]
@@ -207,7 +231,10 @@ def chat():
         return jsonify({"error": "消息不能为空"}), 400
 
     session["history"].append({"role": "user", "content": message})
+    print("cid:  ",cid)
+    print("################")
     save_conversation(cid, session["history"])
+
     #history.append({"role": "user", "content": message})
     # 加入内存
     #memory.chat_memory.add_user_message(message)
@@ -286,7 +313,7 @@ def get_conversations():
         return jsonify([])
 
     conversations = []
-    for filename in os.listdir(STORAGE_PATH):
+    for filename in reversed(os.listdir(STORAGE_PATH)):
         if filename.endswith(".json") and not filename.endswith(".meta.json"):
             cid = filename.replace(".json", '')
             title = "(未命名)"

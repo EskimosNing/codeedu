@@ -19,7 +19,8 @@ os.environ["BASE_URL"] = os.getenv("BASE_URL")
 os.environ["SERPER_API_KEY"] = os.getenv("SERPER_API_KEY")
 
 llm=LLM(model=os.environ["MODEL"],api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-
+#llm_codex=LLM(model="openrouter/openai/codex-mini",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+#llm_planner=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
 search_tool=SerperDevTool()
 code_tool=CodeInterpreterTool()
@@ -32,21 +33,6 @@ def load_yaml(path):
         return yaml.safe_load(f)
 agents_config = load_yaml(AGENTS_PATH)    
 
-
-#planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-#code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-# def build_agent(agent_id, memory=None, tools=None, llm=None):
-#     cfg = agents_config[agent_id]
-#     return Agent(
-#         role=cfg["role"],
-#         goal=cfg["goal"],
-#         backstory=cfg["backstory"],
-#         memory=memory,
-#         verbose=True,
-#         llm=llm,
-#         tools=tools or []
-#     )
-
 chatAgent=Agent(
     role="Chat Agent",
     goal="You are a chat agent that can answer questions and help with tasks",
@@ -55,12 +41,8 @@ chatAgent=Agent(
     verbose=True,
 )
 
-
 planner = Agent(
-    #config=agents_config['planner'], # type: ignore[index]
-    role="Task Planner",
-    goal="Responsible for choosing the agents and tasks to according to the input['request'] , the information are including input['agents'] and input['tasks']",
-    backstory="You can get information about current agents and tasks from input.You are an advanced AI assistant with vast knowledge spanning multiple disciplines, designed to engage in diverse conversations and provide helpful information",
+    config=agents_config['planner'], # type: ignore[index]
     memory=True,  # Default: True
     verbose=True,  # Default: False
     allow_delegation=True,  # Default: False
@@ -87,17 +69,7 @@ reporting_analyst = Agent(
     tools=[write_tool]
 )
 programmer = Agent(
-    role="Python Code Execution Specialist",
-    goal=(
-        "Take a natural-language coding request, generate and run "
-        "a Python script that solves it, capture its stdout, and "
-        "persist any files as needed."
-    ),
-    backstory=(
-        "You're an expert Python developer and execution runtime. "
-        "Your job is to translate user prompts into working scripts, "
-        "run them reliably, and return both the code and its results."
-    ),
+    config=agents_config['programmer'],
     tools=[code_tool, write_tool],
     allow_code_execution=True,
     memory=True,  # Default: True
