@@ -84,6 +84,21 @@ def strip_ansi(text):
     return ansi_escape.sub('', text)
 
 
+<<<<<<< HEAD:src/codeedu/app copy.py
+=======
+
+# def clean_for_json(text: str) -> str:
+#     """清理 ANSI 控制符、替换双引号、转义换行"""
+#     text = ansi_escape.sub('', text)
+
+
+    
+#     text = text.replace('"', '\\"')         # 转义双引号
+#     text = text.replace('\r', '')           # 去除回车
+#     text = text.replace('\n', '\\n')        # 转义换行
+#     return text
+
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
 class StreamToQueue(io.StringIO):
     def write(self, msg):
         if msg.strip():  # 避免空行
@@ -98,8 +113,30 @@ class WordStream(io.StringIO):
         self.result_buffer = ""
 
     def write(self, s):
+<<<<<<< HEAD:src/codeedu/app copy.py
         self.buffer += s
         self.result_buffer += s
+=======
+        
+
+        # 安全清洗并保存到思考缓冲区
+        #clean_s = strip_ansi(s)
+        try:
+            decoded = json.loads(s)
+            if isinstance(decoded, str):
+                self.buffer += decoded
+                self.result_buffer += decoded
+                self.thought_buffer += decoded
+            else:
+                self.buffer += json.dumps(decoded, ensure_ascii=False)
+                self.result_buffer += json.dumps(decoded, ensure_ascii=False)
+                self.thought_buffer += json.dumps(decoded, ensure_ascii=False)
+        except:
+            self.buffer += s
+            self.result_buffer += s
+            self.thought_buffer += s
+
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
         words = re.split(r'(\s+)', self.buffer)
         self.buffer = ""
         for i, word in enumerate(words):
@@ -127,9 +164,20 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
     def run():
         try:
             result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
+<<<<<<< HEAD:src/codeedu/app copy.py
+=======
+            # print("####################planner##########")
+            # print(result.raw)
+            parsed = json.loads(result.raw)  # 把字符串变成 dict
+            pretty_json = json.dumps(parsed, ensure_ascii=False, indent=2)
+
+            session["final_result"] = json.dumps(parsed, ensure_ascii=False)
+            #raw_output = result.raw
+            #session["final_result"] = raw_output
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
             n = 3  # 每3个字符为一块
-            for i in range(0, len(result.raw), n):
-                chunk = result.raw[i:i+n]
+            for i in range(0, len(pretty_json), n):
+                chunk = pretty_json[i:i+n]
                 log_queue.put({"type": "result", "data": chunk})
             #print("RESULT:", result)
             #log_queue.put({"type": "result", "data": result.raw})
@@ -147,7 +195,7 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
                 #print("yielding item:", item)
                 if isinstance(item, dict) and "data" in item:
                     item["data"] = strip_ansi(item["data"])
-                    yield json.dumps(item) + "\n"
+                    yield json.dumps(item, ensure_ascii=False) + "\n"
                 else:
                     yield strip_ansi(str(item)) #+ "\n"
                 #yield f"data: {line}\n\n"  # Server-Sent Events 格式
@@ -161,13 +209,99 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid):
         # 还原 stdout
         sys.stdout = original_stdout
         # 获取最终生成结果并存入内存 + history
+<<<<<<< HEAD:src/codeedu/app copy.py
         final_result = word_stream.get_result()
+=======
+        #print("####################excu##########")
+        #print(session["final_result"])
+        final_result = session.get("final_result", "[EMPTY]")
+        final_thought = word_stream.get_thought()
+        files_after = scan_output_files()
+        new_files = files_after - files_before
+        if new_files:
+            file_infos = []
+            for file in new_files:
+                # session["history"].append({
+                #     "role": "assistant",
+                #     "content": strip_ansi(final_result),
+                #     "filename": file,
+                #     "download_url": f"{file}"
+                # })
+                file_infos.append({
+                        "filename": file,
+                        "download_url": f"{file}"
+                    })
+            #print("####################file_infos##########")
+            #print(file_infos)
+            #  通知前端文件信息
+            yield json.dumps({
+                "type": "file_list",
+                "files": file_infos
+            }, ensure_ascii=False) + "\n"
+            session["history"].append({
+                "role": "assistant",
+                "content":  strip_ansi(final_result),
+                "files": file_infos,
+                "thought": strip_ansi(final_thought)
+            })
+        else:
+            session["history"].append({
+                    "role": "assistant",
+                    "content":  strip_ansi(final_result),
+                    "thought": strip_ansi(final_thought)
+            })
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
         #session["memory"].chat_memory.add_ai_message(final_result)
         #session["history"].append({"role": "assistant", "content": final_result})
         session["history"].append({"role": "assistant", "content": final_result})
        
         save_conversation(cid, session["history"])
 
+<<<<<<< HEAD:src/codeedu/app copy.py
+=======
+def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
+    original_stdout = sys.stdout
+    word_stream = WordStream(log_queue)
+    sys.stdout = word_stream
+
+    def run():
+        try:
+            result = planner_crew.kickoff(inputs=inputs)
+            # print("####################planner##########")
+            # print(result.raw)
+            parsed = json.loads(result.raw)  # 把字符串变成 dict
+            pretty_json = json.dumps(parsed, ensure_ascii=False, indent=2)
+
+            session["planner_output"] = json.dumps(parsed, ensure_ascii=False)
+            n = 3
+            for i in range(0, len(pretty_json), n):
+                chunk = pretty_json[i:i+n]
+                log_queue.put({"type": "planner_result", "data": chunk})
+        except Exception as e:
+            log_queue.put({"type": "planner_result", "data": f"[ERROR] {str(e)}"})
+
+    thread = threading.Thread(target=run)
+    thread.start()
+
+    try:
+        while thread.is_alive() or not log_queue.empty():
+            try:
+                item = log_queue.get(timeout=0.5)
+                if isinstance(item, dict) and "data" in item:
+                    item["data"] = strip_ansi(item["data"])
+                    yield json.dumps(item, ensure_ascii=False) + "\n"
+                else:
+                    yield strip_ansi(str(item))
+            except queue.Empty:
+                continue
+    finally:
+        sys.stdout = original_stdout
+        #print("#########planner###")
+        #print(session["planner_output"])
+
+
+
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
 
 
 def build_my_crew():
@@ -204,7 +338,72 @@ def chat():
     # 加入内存
     #memory.chat_memory.add_user_message(message)
 
+<<<<<<< HEAD:src/codeedu/app copy.py
     # 调用 Crew 执行自然语言对话，并返回
+=======
+    
+
+    planner_inputs = {
+        "user_input": message,
+        "history": format_history(session["history"]),
+        "agents": json.dumps({
+            "Agents": [{"id": item["id"], "configuration": item["configuration"]} 
+                       for item in agents_dict.values()]
+                },ensure_ascii=False),
+        "tasks": json.dumps({
+            "Tasks": [{"id": item["id"], "configuration": item["configuration"]} 
+                      for item in tasks_dict.values()]
+                },ensure_ascii=False),
+    }
+
+    def multi_stage_streaming():
+        # Step 1: Run planner stage and stream result
+        manager_crew = Crew(
+            agents=[planner],
+            tasks=[distribute_task],
+            process=Process.sequential,
+            verbose=True
+        )
+
+        yield from run_planner_and_stream(manager_crew, planner_inputs, session)
+
+        # Step 2: Parse planner result
+        try:
+            parsed = json.loads(session.get("planner_output", "{}"))
+            agent_ids = [a["id"] for a in parsed["distribution_config"]["agents"]]
+            task_ids = [t["id"] for t in parsed["distribution_config"]["tasks"]]
+
+            summary_msg = (
+                f"\n[🧠 Planner 分配结果]\n"
+                f"将使用以下 Agent：{', '.join(agent_ids)}\n"
+                f"对应任务：{', '.join(task_ids)}\n\n"
+            )
+            log_queue.put({"type": "planner_result", "data": summary_msg})
+
+            dynamic_agents = [agents_dict[aid]["agent"] for aid in agent_ids]
+            dynamic_tasks = [tasks_dict[tid]["task"] for tid in task_ids]
+
+        except Exception as e:
+            yield json.dumps({"type": "planner_result", "data": f"[ERROR]: {str(e)}"}, ensure_ascii=False) + "\n"
+            return
+
+        # Step 3: Run execution phase
+        execution_crew = Crew(
+            agents=dynamic_agents,
+            tasks=dynamic_tasks,
+            process=Process.sequential,
+        
+            verbose=True
+        )
+
+        yield from run_crewai_and_stream(
+            crew=execution_crew,
+            inputs={"user_input": message},
+            session=session,
+            cid=cid
+        )
+
+>>>>>>> 5b55d15 (update app.py thought log text ascii):src/codeedu/app_developing.py
     return Response(
         stream_with_context(run_crewai_and_stream(crew, {'question': message},session,cid)),
         mimetype="text/plain"
