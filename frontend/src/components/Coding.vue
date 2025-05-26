@@ -39,6 +39,7 @@ import 'codemirror/lib/codemirror.css'
 import 'codemirror/theme/darcula.css'
 import 'codemirror/mode/python/python.js'
 import 'codemirror/addon/selection/active-line.js'
+import axios from 'axios' // 新增导入
 
 export default {
   components: { codemirror },
@@ -68,8 +69,8 @@ export default {
     onEditorReady(cm) {
       this.editor = cm
       // 初始化示例代码
-      this.code = 
-      `# 欢迎使用代码编辑器
+      this.code =
+        `# 欢迎使用代码编辑器
 def hello():
     print("Hello World!")
     
@@ -89,7 +90,9 @@ if __name__ == "__main__":
     handleCopy() {
       navigator.clipboard.writeText(this.code)
       this.$message.success('代码已复制')
-    }
+    },
+
+
   }
 }
 </script>
@@ -208,22 +211,29 @@ if __name__ == "__main__":
 }
 
 .coding-container::-webkit-scrollbar-track {
-    background: transparent;  /* 关键设置 */
-    border: none;            /* 去除边框 */
-  }
-  
-  /* 滚动条整体样式 */
+  background: transparent;
+  /* 关键设置 */
+  border: none;
+  /* 去除边框 */
+}
+
+/* 滚动条整体样式 */
 .coding-container::-webkit-scrollbar {
-    width: 17px;  /* 仅保留滑块所需宽度 */
-    height: 17px; /* 横向滚动条同理 */
-    background: transparent;  /* 滚动条所在区域透明 */
-  }
-  
-  /* 灰色滑块样式 */
+  width: 17px;
+  /* 仅保留滑块所需宽度 */
+  height: 17px;
+  /* 横向滚动条同理 */
+  background: transparent;
+  /* 滚动条所在区域透明 */
+}
+
+/* 灰色滑块样式 */
 .coding-container::-webkit-scrollbar-thumb {
-    background: #494a4d;
-    border-radius: 5px;
-    border: 2px solid rgba(255,255,255,0.1); /* 微透明边框增加层次 */
-    background-clip: content-box; /* 防止背景渗透到边框 */
-  }
+  background: #494a4d;
+  border-radius: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  /* 微透明边框增加层次 */
+  background-clip: content-box;
+  /* 防止背景渗透到边框 */
+}
 </style>
