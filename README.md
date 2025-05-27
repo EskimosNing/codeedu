@@ -126,23 +126,13 @@ All generated reports, fixed code files, and result documents are saved in the `
 GET /output/<filename>
 ```
 
+## Contributors
 
-
-
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-...
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
-
----
-
-## 📬 Contact & Resources
-
-- [CrewAI Docs](https://github.com/joaomdmoura/crewai)
-- [GitHub Issues](https://github.com/joaomdmoura/crewai/issues)
-- [Join Discord](https://discord.gg/crewai)
-
-
-
