@@ -1,64 +1,144 @@
-# Codeedu Crew
+# 🤖 CodeEdu Crew — Multi-Agent AI Platform (Flask Version)
 
-Welcome to the Codeedu Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+**CodeEdu Crew** is a multi-agent AI system built with [CrewAI](https://github.com/joaomdmoura/crewai), exposed via a Flask backend with a streaming-capable API. It allows AI agents to collaborate on complex tasks such as Python code execution, report writing, research, and education.
 
-## Installation
+---
 
-Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+## 📁 Project Structure
 
-First, if you haven't already, install uv:
+```
+├── app.py                   # Flask main API entry point
+├── src/
+│   ├── codeedu/
+│   │   ├── config/
+│   │   │   ├── agents.yaml
+│   │   │   └── tasks.yaml
+│   │   ├── agents_pool.py   # Agent definitions
+│   │   └── task.py          # Task definitions
+├── output/                  # Output files (e.g., markdown reports)
+├── conversations/           # Stored chat histories
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+Make sure you are using Python >=3.10 and <3.13.
+
+### 1. Install dependencies
 
 ```bash
-pip install uv
+pip install -r requirements.txt
 ```
 
-Next, navigate to your project directory and install the dependencies:
-
-(Optional) Lock the dependencies and install them by using the CLI command:
-```bash
-crewai install
-```
-### Customizing
-
-**Add your `OPENAI_API_KEY` into the `.env` file**
-
-- Modify `src/codeedu/config/agents.yaml` to define your agents
-- Modify `src/codeedu/config/tasks.yaml` to define your tasks
-- Modify `src/codeedu/crew.py` to add your own logic, tools and specific args
-- Modify `src/codeedu/main.py` to add custom inputs for your agents and tasks
-
-## Running the Project
-
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+### 2. Run the Flask backend
 
 ```bash
-$ crewai run
+python app.py
 ```
 
-This command initializes the CodeEdu Crew, assembling the agents and assigning them tasks as defined in your configuration.
+By default, it will start on `http://localhost:5000`.
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+---
 
-## Understanding Your Crew
+## 🔐 Environment Variables
 
-The CodeEdu Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+Create a `.env` file or export these before running:
 
-## Frontend Setup
-```
-npm install
-```
-
-## Frontend Run
-```
-npm run serve
+```env
+OPENAI_API_KEY=your-api-key
+OPENROUTER_API_KEY=your-api-key
+BASE_URL=https://api.openai.com/v1
+SERPER_API_KEY=optional
 ```
 
-## Support
+---
 
-For support, questions, or feedback regarding the Codeedu Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+## 🔧 Available API Endpoints
 
-Let's create wonders together with the power and simplicity of crewAI.
+| Endpoint                     | Method | Description                                  |
+|-----------------------------|--------|----------------------------------------------|
+| `/chat`                     | POST   | Multi-agent reasoning for custom input       |
+| `/execute_code_snippet`     | POST   | Upload a Python file and get agent analysis  |
+| `/upload_code`              | POST   | Inject a code snippet into session context   |
+| `/output/<filename>`        | GET    | Download files produced by agents            |
+| `/new_conversation`         | POST   | Start a new session                          |
+| `/conversations`            | GET    | List all saved conversations                 |
+| `/conversation/<cid>`       | GET    | Get full history of a specific conversation  |
+| `/delete_conversation/<cid>`| DELETE | Delete a conversation and its history        |
+
+---
+
+## 🧪 Usage Example (via Postman or Frontend)
+
+### Upload and run a Python script
+```
+POST /execute_code_snippet
+Form-Data:
+  - file: my_script.py
+  - conversation_id: 1234-5678
+```
+
+### Ask a question (multi-agent planning)
+```json
+POST /chat
+{
+  "conversation_id": "1234-5678",
+  "message": "Can you explain how binary search works with Python code?"
+}
+```
+
+---
+
+## 🧠 Agent Configuration Sample
+
+```yaml
+educator:
+  role: "AI Educator"
+  goal: "Explain technical concepts clearly with code examples"
+  backstory: "You are a brilliant teacher known for simplifying complex ideas."
+```
+
+---
+
+
+
+## 📌 Feature Board
+
+| Feature                           | Status     |
+|----------------------------------|------------|
+| ✅ Flask API with streaming      | Completed ✅ |
+| ✅ File upload + code execution  | Completed ✅ |
+| ✅ Agent auto-assignment         | Completed ✅ |
+| ✅ LLM summarization of thought  | Completed ✅ |
+| 🔄 LangGraph integration         | In Progress |
+| 🔲 Frontend log visualization    | Coming Soon |
+
+---
+
+## 📦 Output & Downloads
+
+All generated reports, fixed code files, and result documents are saved in the `/output` directory and can be downloaded via:
+
+```
+GET /output/<filename>
+```
+
+
+
+
+
+
+
+---
+
+## 📬 Contact & Resources
+
+- [CrewAI Docs](https://github.com/joaomdmoura/crewai)
+- [GitHub Issues](https://github.com/joaomdmoura/crewai/issues)
+- [Join Discord](https://discord.gg/crewai)
+
+
+
