@@ -1,6 +1,6 @@
 # 🤖 CodeEdu Crew — Multi-Agent AI Platform (Flask Version)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 **CodeEdu Crew** is a multi-agent AI system built with [CrewAI](https://github.com/joaomdmoura/crewai), exposed via a Flask backend with a streaming-capable API. It allows AI agents to collaborate on complex tasks such as Python code execution, report writing, research, and education.
@@ -138,6 +138,7 @@ GET /output/<filename>
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/EskimosNing"><img src="https://avatars.githubusercontent.com/u/52128671?v=4?s=100" width="100px;" alt="EskimosNing"/><br /><sub><b>EskimosNing</b></sub></a><br /><a href="https://github.com/EskimosNing/codeedu/commits?author=EskimosNing" title="Code">💻</a> <a href="#design-EskimosNing" title="Design">🎨</a> <a href="#projectManagement-EskimosNing" title="Project Management">📆</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ACCFOOL"><img src="https://avatars.githubusercontent.com/u/115349095?v=4?s=100" width="100px;" alt="ACCFOOL"/><br /><sub><b>ACCFOOL</b></sub></a><br /><a href="https://github.com/EskimosNing/codeedu/commits?author=ACCFOOL" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
