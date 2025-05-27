@@ -8,12 +8,23 @@
   "commitConvention": "angular",
   "contributors": [
     {
+
+      "login": "EskimosNing",
+      "name": "EskimosNing",
+      "avatar_url": "https://avatars.githubusercontent.com/u/52128671?v=4",
+      "profile": "https://github.com/EskimosNing",
+      "contributions": [
+        "code",
+        "design",
+        "projectManagement"
+        
       "login": "Try1234567",
       "name": "Try1234567",
       "avatar_url": "https://avatars.githubusercontent.com/u/105978749?v=4",
       "profile": "https://github.com/Try1234567",
       "contributions": [
         "code"
+
       ]
     }
   ],
