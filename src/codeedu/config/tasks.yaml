@@ -10,7 +10,7 @@ research_task:
 reporting_task:
   description: >
     请根据上下文中的研究内容，撰写完整的 markdown 报告，包含每个主题的说明部分
-    最后，请调用 FileWriterTool 工具并将报告保存为 .md 文件。返回JSON格式的文件信息
+    最后，请调用 FileWriterTool 工具并将报告保存为 .md 文件到 output/文件夹。返回JSON格式的文件信息
   expected_output: >
    {
       "content": "内容",
@@ -43,23 +43,47 @@ distribute_task:
 
 code_task:
   description: >
-    "根据用户请求：\n\n"
-        "{user_input}\n\n"
-        "你需要：\n"
-        "- 生成可运行的 Python 代码来满足需求\n"
-        "- 使用 FileWriterTool 写入 `.py` 文件（必须）保存到 output/ 文件夹下\n"
-        "- 执行代码并输出结果（如有）\n"
-        "- 最终以 JSON 格式返回：包含 'content', 'filename', 'summary' 字段。\n"
-        "注意：请务必使用工具写文件，而不是仅打印。"
+   请根据用户输入 `{user_input}` 的自然语言编程请求，完成以下步骤：
+    - 自动生成一段可运行的 Python 脚本来解决问题；
+    - 如用户请求保存代码或结果，请使用 FileWriterTool 保存文件，路径应在 output/ 目录下；
+    - 执行代码，捕获并返回标准输出（如有）；
+    - 以 JSON 格式返回结果，包含字段：
+        - 'content': 最终生成的 Python 脚本代码
+        - 'filename': （如保存文件）保存的路径
+        - 'summary': 简要说明该脚本的功能
+
+    若无需保存文件，仅返回代码与执行结果即可。
   expected_output: >
    {
-      "content": "内容",
-      "filename": "output/xxx.py",
-      "summary": "总结"
+      "content": "Python 脚本代码",
+      "filename": "output/xxx.py（如有）",
+      "summary": "简要说明脚本功能"
     }
     - content: 为生成的文件
     - filename: 输出保存的路径
     - summary: 对内容进行简要说明
+  agent: programmer
+
+code_analysis_task:
+  description: >
+    请阅读用户上传的 Python 代码文件，并完成以下操作：
+
+    1. 尝试执行代码，并输出运行结果；
+    2. 若执行出错，请输出错误信息与错误代码，并提供修复后的代码版本；
+    3. 若代码中缺少示例数据，请自动补全示例数据并演示运行结果；
+    4. 分析代码的逻辑结构，指出潜在问题或可优化之处；
+    5. 给出优化建议，并附带优化后的代码版本；
+    6. 最终结果请使用 markdown 格式，结构清晰地展示每个步骤的结果与分析内容。
+
+  expected_output: >
+    一个包含以下内容的 markdown 报告：
+    - 原始代码执行结果
+    - 错误信息（若有）
+    - 错误代码 & 修复代码
+    - 自动生成的示例数据
+    - 示例运行结果
+    - 代码逻辑结构与语法分析
+    - 优化建议及优化后的代码
   agent: programmer
 
 

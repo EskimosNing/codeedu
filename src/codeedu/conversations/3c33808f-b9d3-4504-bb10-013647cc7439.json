@@ -1,0 +1,6 @@
+[
+  {
+    "role": "user",
+    "content": "欢迎使用代码编辑器以下是示例代码：\\n```python\\nprint(\"Hello World\")\\n```"
+  }
+]
