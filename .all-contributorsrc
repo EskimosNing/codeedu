@@ -9,6 +9,14 @@
   "contributors": [
     {
 
+      "login": "yinlaetitia",
+      "name": "YIN Jianing",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72556180?v=4",
+      "profile": "https://github.com/yinlaetitia",
+      "contributions": [
+        "code"
+      ]
+
       "login": "EskimosNing",
       "name": "EskimosNing",
       "avatar_url": "https://avatars.githubusercontent.com/u/52128671?v=4",
@@ -17,14 +25,13 @@
         "code",
         "design",
         "projectManagement"
-        
+      ]  
       "login": "Try1234567",
       "name": "Try1234567",
       "avatar_url": "https://avatars.githubusercontent.com/u/105978749?v=4",
       "profile": "https://github.com/Try1234567",
       "contributions": [
         "code"
-
       ]
     }
   ],
