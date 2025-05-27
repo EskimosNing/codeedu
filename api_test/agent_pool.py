@@ -4,6 +4,7 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
 from crewai_tools import SerperDevTool,CodeInterpreterTool,FileWriterTool
 import os
+from langchain_core.memory import ConversationBufferMemory
 import sys
 from dotenv import load_dotenv
 import yaml
@@ -30,34 +31,44 @@ with open("src/codeedu/config/agents.yaml") as file:
 #planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 #code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 # define agents
+
+chatAgent=Agent(
+    role="Chat Agent",
+    goal="You are a chat agent that can answer questions and help with tasks",
+    backstory="You are a chat agent that can answer questions and help with tasks",
+    memory=ConversationBufferMemory(return_messages=True),
+    verbose=True,
+)
+
+
 planner = Agent(
     #config=agents_config['planner'], # type: ignore[index]
     role="Task Planner",
     goal="Responsible for choosing the agents and tasks to according to the input['request'] , the information are including input['agents'] and input['tasks']",
     backstory="You can get information about current agents and tasks from input.You are an advanced AI assistant with vast knowledge spanning multiple disciplines, designed to engage in diverse conversations and provide helpful information",
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=True,  # Default: False
     #tools=[search_tool],  # Optional: List of tools
-    llm=copy.deepcopy(llm),
+    llm=llm,
 )
 
 researcher = Agent(
     config=agents_config['researcher'],
     
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=False,  # Default: False
     tools=[search_tool],  # Optional: List of tools
-    llm=copy.deepcopy(llm)
+    llm=llm
 )
 reporting_analyst = Agent(
     config=agents_config['reporting_analyst'], # type: ignore[index]
     #llm="gpt-4",  # Default: OPENAI_MODEL_NAME or "gpt-4
     memory=True,  # Default: True
-    verbose=False,  # Default: False
+    verbose=True,  # Default: False
     allow_delegation=False,  # Default: False
-    llm=copy.deepcopy(llm),
+    llm=llm,
     tools=[write_tool]
 )
 programmer = Agent(
@@ -74,8 +85,9 @@ programmer = Agent(
     ),
     tools=[code_tool, write_tool],
     allow_code_execution=True,
+    memory=True,  # Default: True
     verbose=True,
-    llm=copy.deepcopy(llm),
+    llm=llm,
     allow_delegation=False,
 )
 
