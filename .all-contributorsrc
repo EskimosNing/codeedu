@@ -17,6 +17,15 @@
         "design",
         "projectManagement"
       ]
+    },
+    {
+      "login": "ACCFOOL",
+      "name": "ACCFOOL",
+      "avatar_url": "https://avatars.githubusercontent.com/u/115349095?v=4",
+      "profile": "https://github.com/ACCFOOL",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
