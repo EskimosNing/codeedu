@@ -36,17 +36,7 @@ agents_config = load_yaml(AGENTS_PATH)
 
 planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 #code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-# def build_agent(agent_id, memory=None, tools=None, llm=None):
-#     cfg = agents_config[agent_id]
-#     return Agent(
-#         role=cfg["role"],
-#         goal=cfg["goal"],
-#         backstory=cfg["backstory"],
-#         memory=memory,
-#         verbose=True,
-#         llm=llm,
-#         tools=tools or []
-#     )
+
 
 chatAgent=Agent(
     role="Chat Agent",
