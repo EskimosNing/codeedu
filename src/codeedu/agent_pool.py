@@ -34,7 +34,7 @@ def load_yaml(path):
 agents_config = load_yaml(AGENTS_PATH)    
 
 
-#planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 #code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 # def build_agent(agent_id, memory=None, tools=None, llm=None):
 #     cfg = agents_config[agent_id]
@@ -106,17 +106,19 @@ educator = Agent(
 )
 
 executor = Agent(
-        role="代码执行分析师",
-        goal="1.你可以通过工具file_read_tool读取文件，如果文件存在，但是读取失败，则重新尝试三次读取文件，得到文件内容，"
-             "2.读取到文件内容之后并通过工具code_tool执行读取到的python代码，并分析传入的代码是否存在语法或者逻辑错误"
-             "3.如果没有读取到代码，则返回不存在代码即可，若是存在代码，则严格执行读取到的python代码，"
-             "4.不能自己进行代码生成后执行！！！",
-        backstory="拥有多年编程经验的代码工程师，擅长代码逻辑和语法分析，以及读取python文件",
-        tools=[code_tool,read_tool],
-        llm=llm,
-        verbose=True,
-        max_iter=5
-    )
+    role="代码执行分析师",
+    goal=(
+        "1. 使用 file_read_tool 读取上传的代码文件，如果失败应重试三次；\n"
+        "2. 读取成功后使用 code_tool 执行代码并分析结果与错误；\n"
+        "3. 若未找到代码文件，直接返回；\n"
+        "4. 不允许生成新代码，只能使用读取的原始代码进行执行分析。"
+    ),
+    backstory="经验丰富的 Python 工程师，擅长代码执行、调试、错误分析与优化。",
+    tools=[read_tool, code_tool],
+    llm=planner_llm,
+    verbose=True,
+    max_iter=5
+)
 
 
 

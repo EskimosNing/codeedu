@@ -1,4 +1,4 @@
-from flask import Flask, Response, stream_with_context,render_template,request,jsonify
+from flask import Flask, Response, stream_with_context,request,jsonify
 import sys
 import threading
 import queue
@@ -9,7 +9,7 @@ from crewai_tools import SerperDevTool,CodeInterpreterTool,FileWriterTool
 
 #from langchain.memory import ConversationBufferMemory
 
-from langchain_core.prompts import ChatPromptTemplate
+#from langchain_core.prompts import ChatPromptTemplate
 import json
 import re
 import uuid
@@ -241,25 +241,25 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
         # print(session["final_result"])
         
 
-        # files_after = scan_output_files()
-        # new_files = files_after - files_before
-        # if new_files:
-        #     #session['file_flag']=True
-        #     file_infos = []
-        #     for file in new_files:
-        #         file_infos.append({
-        #                 "filename": file,
-        #                 "download_url": f"{file}"
-        #             })
-        #     #print("####################file_infos##########")
-        #     #print(file_infos)
-        #     #  通知前端文件信息
+        files_after = scan_output_files()
+        new_files = files_after - files_before
+        if new_files:
+            #session['file_flag']=True
+            file_infos = []
+            for file in new_files:
+                file_infos.append({
+                        "filename": file,
+                        "download_url": f"{file}"
+                    })
+            #print("####################file_infos##########")
+            #print(file_infos)
+            #  通知前端文件信息
 
-        #     yield json.dumps({
-        #         "type": "file_list",
-        #         "files": file_infos
-        #     }, ensure_ascii=False) + "\n"
-        #     session['file_infos']=file_infos
+            yield json.dumps({
+                "type": "file_list",
+                "files": file_infos
+            }, ensure_ascii=False) + "\n"
+            session['file_infos']=file_infos
 
 
 def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
@@ -308,6 +308,74 @@ def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
         #     yield json.dumps(log_queue_thought.get(timeout=0.5), ensure_ascii=False) + "\n"
     finally:
         sys.stdout = original_stdout
+
+def run_code_analysis_and_stream(crew: Crew, inputs: dict, session: dict, cid: str):
+    original_stdout = sys.stdout
+    word_stream = WordStream()
+    sys.stdout = word_stream
+    files_before = set(scan_output_files())
+
+    def run():
+        try:
+            result = crew.kickoff(inputs=inputs)
+            session["final_result"] = result.raw
+            for i in range(0, len(result.raw), 3):
+                chunk = result.raw[i:i+3]
+                log_queue_result.put({"type": "result", "data": chunk})
+        except Exception as e:
+            err = f"[ERROR] {str(e)}"
+            session["final_result"] = err
+            log_queue_result.put({"type": "result", "data": err})
+
+    thread = threading.Thread(target=run)
+    thread.start()
+
+    try:
+        # 实时记录 raw thought 日志
+        while thread.is_alive() or not log_queue_thought.empty():
+            for line in word_stream.raw_thought_lines:
+                log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
+            word_stream.raw_thought_lines.clear()
+            try:
+                item = log_queue_thought.get(timeout=0.5)
+                yield json.dumps(item, ensure_ascii=False) + "\n"
+            except queue.Empty:
+                continue
+
+        # 总结 execution thought
+        execution_thought = word_stream.get_thought()
+        session["execution_thought"] = execution_thought
+        summary_text = ""
+        for chunk in summarize_thoughts_stream(execution_thought):
+            parsed = json.loads(chunk)
+            if parsed.get("type") == "thought":
+                summary_text += parsed["data"]
+                yield json.dumps(parsed, ensure_ascii=False) + "\n"
+
+        # 输出 result
+        while not log_queue_result.empty():
+            yield json.dumps(log_queue_result.get(timeout=0.5), ensure_ascii=False) + "\n"
+
+        # 输出文件列表
+        files_after = scan_output_files()
+        new_files = files_after - files_before
+        if new_files:
+            file_infos = [{"filename": f, "download_url": f"{f}"} for f in new_files]
+            session["file_infos"] = file_infos
+            yield json.dumps({"type": "file_list", "files": file_infos}, ensure_ascii=False) + "\n"
+
+        # 保存历史
+        session["history"].append({
+            "role": "assistant",
+            "content": session.get("final_result", ""),
+            "thought": summary_text,
+            "files": session.get("file_infos", [])
+        })
+        save_conversation(cid, session["history"])
+
+    finally:
+        sys.stdout = original_stdout
+
 
 def build_my_crew():
     # 创建内存并共享给所有 agent
@@ -445,44 +513,32 @@ def upload_code():
 
     return jsonify({"message": "代码已注入上下文成功"})
 
+
 @app.route('/execute_code_snippet', methods=['POST'])
 def execute_code_snippet():
     cid = request.form["conversation_id"]
     session = get_or_create_session(cid)
-    
 
     if 'file' not in request.files:
         return jsonify({"error": "未提供文件"}), 400
     file = request.files["file"]
-    #file = request.files['code']  # 获取上传文件对象
     if file.filename == '':
         return jsonify({"error": "文件名为空"}), 400
 
     # 保存文件
-
     save_path = os.path.join(OUTPUT_DIR, file.filename)
     file.save(save_path)
 
-
-
-    prompt = f"""
-            请分析并执行我上传的 Python 代码文件 `{save_path}`，文件路径为 `{save_path}`。
-            请输出以下内容：
-
-            1. 输出代码执行后的结果；
-            2. 对结果的分析；
-            3. 若代码存在错误，则将正确的代码和错误的代码一并输出；
-            4. 如果代码中缺少示例，请自动生成示例数据并执行；
-            5. 对代码的语法和逻辑进行分析；
-            6. 提出优化建议，并提供优化后的代码和理由。
-
-            最终请以 Markdown 格式输出完整报告。
-            """
+    # 保存文件内容到历史中（markdown）
     with open(save_path, "r", encoding="utf-8") as f:
         code_content = f.read()
-    session["history"].append({"role": "user", "content": f"```python\n{code_content}\n```"})
+    session["history"].append({
+        "role": "user",
+        "content": f"```python\n{code_content}\n```"
+    })
     save_conversation(cid, session["history"])
 
+    # 构造 Crew
     direct_crew = Crew(
         agents=[executor],
         tasks=[code_analysis_task],
@@ -490,9 +546,14 @@ def execute_code_snippet():
         verbose=True
     )
 
+    # 清空队列
+    clear_queue(log_queue_thought)
+    clear_queue(log_queue_result)
+
+    # 启动流式响应（调用新函数）
     return Response(
         stream_with_context(
-            run_crewai_and_stream(
+            run_code_analysis_and_stream(
                 crew=direct_crew,
                 inputs={"path": save_path},
                 session=session,
@@ -501,6 +562,7 @@ def execute_code_snippet():
         ),
         mimetype="text/plain"
     )
+
 
 
 @app.route('/submit_code', methods=['POST'])
@@ -522,9 +584,9 @@ def submit_code():
 
 
 # --- 页面路由 ---
-@app.route("/")
-def index():
-    return render_template("index2.html")
+# @app.route("/")
+# def index():
+#     return render_template("index2.html")
 
 
 # --- 会话管理 ---
