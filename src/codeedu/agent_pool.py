@@ -1,3 +1,12 @@
+'''
+ # @ Author: Jianing ZHAO
+ # @ Create Time: 2025-05-26 17:54:25
+ # @ Modified by: Jianing ZHAO
+ # @ Modified time: 2025-05-28 14:09:26
+ # @ Description:
+ '''
+
+
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
@@ -38,12 +47,11 @@ planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.enviro
 #code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
 
-chatAgent=Agent(
-    role="Chat Agent",
-    goal="You are a chat agent that can answer questions and help with tasks",
-    backstory="You are a chat agent that can answer questions and help with tasks",
+chat_agent=Agent(
+    config=agents_config['chat_agent'],
     memory=True,
     verbose=True,
+    llm=llm,
 )
 
 

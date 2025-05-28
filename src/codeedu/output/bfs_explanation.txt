@@ -1,0 +1,70 @@
+### 什么是 BFS 算法？
+
+广度优先搜索（BFS）是一种图遍历算法，它从一个节点开始，先访问所有邻接（相连）节点，然后再访问这些邻接节点的邻接节点，以此类推。BFS 算法保证访问节点的顺序是层级性的，最先被访问的节点是最接近起始节点的。
+
+### BFS 的工作原理
+
+1. **初始化**：
+   - 首先，从起始节点开始，将其标记为已访问，并将其放入一个队列中。
+  
+2. **队列处理**：
+   - 当队列不为空时，执行以下操作：
+     - 从队列中取出一个节点，并访问它。
+     - 检查该节点的所有邻接节点：
+       - 如果这些邻接节点未被访问，则将它们标记为已访问，并加入到队列中。
+
+3. **重复过程**：
+   - 继续这个过程，直到队列为空，即没有更多节点可以访问。
+
+### BFS 的应用
+
+BFS 算法广泛应用于许多实际问题中，包括但不限于：
+
+- **最短路径问题**：在无权图中，BFS 可以找到从起始节点到目标节点的最短路径。
+- **网络广播**：在计算机网络中，BFS 可以用于找到所有可以被广播到的节点。
+- **拼图游戏**：可以用于检测到特定状态的最少步数。
+- **层级结构遍历**：如社交网络中的朋友推荐系统。
+
+### Python 示例代码
+
+下面是一个简单的 BFS 实现示例，假设我们有一个无向图：
+
+```python
+from collections import deque
+
+def bfs(graph, start):
+    visited = set()  # 用于存储已访问的节点
+    queue = deque([start])  # 初始化队列
+
+    while queue:
+        vertex = queue.popleft()  # 从左侧弹出一个节点
+        if vertex not in visited:
+            print(vertex, end=" ")  # 访问节点
+            visited.add(vertex)  # 标记该节点为已访问
+            
+            # 将所有未访问的邻接节点加入队列
+            queue.extend(neighbor for neighbor in graph[vertex] if neighbor not in visited)
+
+# 示例图的邻接表表示
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E']
+}
+
+# 从节点 'A' 开始 BFS 遍历
+print("BFS Traversal starting from vertex A:")
+bfs(graph, 'A')
+```
+
+### 结果
+
+当运行这个示例代码时，你会看到 BFS 从节点 'A' 开始遍历整个图，输出的结果为：
+
+```
+BFS Traversal starting from vertex A:
+A B C D E F 
+```

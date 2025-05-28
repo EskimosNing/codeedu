@@ -1,11 +1,3 @@
-'''
- # @ Author: Jianing ZHAO
- # @ Create Time: 2025-05-26 17:54:25
- # @ Modified by: Jianing ZHAO
- # @ Modified time: 2025-05-28 14:08:11
- # @ Description:
- '''
-
 from flask import Flask, Response, stream_with_context,request,jsonify
 import sys
 import threading
@@ -27,27 +19,32 @@ import os
 import html
 from flask import send_from_directory
 from flask_cors import CORS
-from agent_pool import planner, researcher, reporting_analyst, programmer, educator,agents_config,executor,chat_agent
-from task import distribute_task, code_task, reporting_task, tasks_config,research_task,education_task,code_analysis_task,generate_quiz_task,greeting_task
-from utils.intention import should_greet_or_chitchat
+from agent_pool import planner, researcher, reporting_analyst, programmer, educator,agents_config,executor
+from task import distribute_task, code_task, reporting_task, tasks_config,research_task,education_task,code_analysis_task
+
 #src.codeedu.task 
-from pathlib import Path
+
+from utils.stream import strip_ansi,WordStream
+from utils.conversation import *
+from utils.file_ops import *
+from utils.summarize import *
+
 
 app = Flask(__name__)
 CORS(app)
-OUTPUT_DIR =Path(__file__).parent / "output"
-STORAGE_PATH = Path(__file__).parent / "conversations" 
+
+
 #print(STORAGE_PATH)
 #print("**********")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(STORAGE_PATH, exist_ok=True)
+
+
   # user_id or convo_id → {'crew': ..., 'memory': ..., 'history': [...]}
 # 队列存储日志
 #log_queue = queue.Queue()
 log_queue_thought = queue.Queue()
 log_queue_result = queue.Queue()
 internal_thought_log = [] #记录 raw_thought
-
+*
 agents_dict = {
   'researcher': {"id": "researcher", "configuration": agents_config["researcher"], "agent": researcher},
   'reporting_analyst': {"id": "reporting_analyst", "configuration": agents_config["reporting_analyst"], "agent": reporting_analyst},
@@ -61,25 +58,13 @@ tasks_dict = {
   'reporting_task': {"id": "reporting_task", "configuration": tasks_config["reporting_task"], "task": reporting_task},
   'code_task': {"id": "code_task", "configuration": tasks_config["code_task"], "task": code_task},
   'education_task': {"id": "education_task", "configuration": tasks_config["education_task"], "task": education_task},
-  'generate_quiz_task':{"id": "generate_quiz_task", "configuration": tasks_config["generate_quiz_task"], "task": generate_quiz_task},
 }
 # --- 工具函数 ---
 # 获取对话的路径
-def get_convo_path(cid):
-    return os.path.join(STORAGE_PATH, f'{cid}.json')
+
 
 # 加载对话历史
-def load_conversation(cid):
-    path = get_convo_path(cid)
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f)
-    return []
 
-# 保存对话历史
-def save_conversation(cid, history):
-    with open(get_convo_path(cid), 'w') as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
 
 
 session_store = {}
@@ -95,12 +80,9 @@ def get_or_create_session(conversation_id):
         }
     return session_store[conversation_id]
 
-# 匹配 ANSI 转义序列的正则
-ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-#box_drawing = re.compile(r'[─╮╯╰│╭╮╯╰]+')
-# 清除颜色控制字符
-def strip_ansi(text):
-    return ansi_escape.sub('', text)
+
+
+
 def clear_queue(q: queue.Queue):
     while not q.empty():
         try:
@@ -108,145 +90,8 @@ def clear_queue(q: queue.Queue):
         except queue.Empty:
             break
 
-class WordStream(io.StringIO):
-    def __init__(self):
-        super().__init__()
-        self.result_buffer = ""
-        self.thought_buffer = ""
-        self.raw_thought_lines = []  # 👈 保存每行日志
-
-    def write(self, s):
-        self.result_buffer += s
-        self.thought_buffer += s
-        # 实时收集，但不推送
-        lines = s.splitlines(keepends=True)
-        for line in lines:
-            if line.strip():
-                self.raw_thought_lines.append(line)
-
-    def get_thought(self):
-        return "\n".join(self.raw_thought_lines)
-
-    def get_result(self):
-        return strip_ansi(self.result_buffer)
 
 
-
-def scan_output_files():
-    output_dir = Path("output")
-    return set(str(f) for f in output_dir.glob("*") if f.is_file())
-
-
-def summarize_thoughts_stream(thought_text):
-    from openai import OpenAI  # 或其他你用的 LLM 接口
-    import openai
-
-    client = openai.OpenAI(api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-
-    # 用 streaming 模式调用模型总结
-    response = client.chat.completions.create(
-        model="openai/gpt-4o-mini",  # or gpt-4o-mini
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "你是一个 AI 观察记录员，负责将多位 AI Agent 的任务执行过程，"
-                    "以结构清晰、容易理解的格式总结出来。"
-                    "\n\n"
-                    "你应该模仿 CrewAI 的 `thought` 日志风格，用中文表达，但要逻辑清楚、简明易懂。\n"
-                    "请使用以下结构来组织输出：\n"
-                    "1. 总览：本次任务的主要目标是什么；\n"
-                    "2. 分配：哪些 Agent 被分配到哪些任务；\n"
-                    "3. 执行：各个 Agent 是如何执行这些任务的，有没有使用工具，工具输出了什么；\n"
-                    "4. 结果简述：总结整体输出结果，是否成功，是否产生文件；\n"
-                    "5. 若有必要，补充关键逻辑或注意事项。\n\n"
-                    "风格上可以模仿 CrewAI 思考日志，但要更清楚更适合用户阅读，不要逐字复述原始输出。"
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"以下是 AI agents 在任务执行过程中的原始日志：\n\n{thought_text}\n\n"
-                    "请根据上面结构总结输出："
-                )
-            }
-        ],
-        stream=True,
-        temperature=0.5
-    )
-    
-    # 流式返回
-    for chunk in response:
-        delta = chunk.choices[0].delta
-        if hasattr(delta, "content") and delta.content:
-            yield json.dumps({"type": "thought", "data": delta.content}, ensure_ascii=False) + "\n"
-
-def run_chatcrew_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
-    original_stdout = sys.stdout
-    word_stream = WordStream()
-    sys.stdout = word_stream
-    #files_before = set(scan_output_files())  # 执行前文件列表
-
-    def run():
-        try:
-            result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
-            session["final_result"] = result.raw
-            
-            for i in range(0, len(result.raw), 3):
-                chunk = result.raw[i:i+3]
-                log_queue_result.put({"type": "result", "data": chunk})
-        except Exception as e:
-            err = f"[ERROR] {str(e)}"
-            log_queue_result.put({"type": "result", "data": f"[ERROR] {str(e)}"})
-            session["final_result"] = err
-
-
-    thread = threading.Thread(target=run)
-    thread.start()
-
-    try:
-        while thread.is_alive() or not log_queue_thought.empty():
-            for line in word_stream.raw_thought_lines:
-                log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
-            word_stream.raw_thought_lines.clear()
-            try:
-                item = log_queue_thought.get(timeout=2)
-                yield json.dumps(item, ensure_ascii=False) + "\n"
-            except queue.Empty:
-                continue
-        # #  任务完成后，总结 execution thought
-        # execution_thought = word_stream.get_thought()
-        # session["execution_thought"] = execution_thought
-
-        
-        # for chunk in summarize_thoughts_stream(execution_thought):
-        #     parsed = json.loads(chunk)
-        #     if parsed.get("type") == "thought":
-        #         log_queue_thought.put(parsed)  # 优先展示 thought
-
-        # #  输出 summary thought
-        # while not log_queue_thought.empty():
-        #     yield json.dumps(log_queue_thought.get(timeout=0.5), ensure_ascii=False) + "\n"
-            
-            
-
-        #  输出 result（在 thought 之后）
-        while not log_queue_result.empty():
-            yield json.dumps(log_queue_result.get(timeout=0.5), ensure_ascii=False) + "\n"
-
-        # files_after = scan_output_files()
-        # new_files = files_after - files_before
-        # if new_files:
-        #     file_infos = [{"filename": f, "download_url": f"{f}"} for f in new_files]
-        #     session["file_infos"] = file_infos
-        #     yield json.dumps({"type": "file_list", "files": file_infos}, ensure_ascii=False) + "\n"
-
-
-    finally:
-        # 还原 stdout
-        sys.stdout = original_stdout
-        session["history"].append({"role": "assistant", "content": session.get("final_result", ""),})
-        save_conversation(cid, session["history"])
 
 # 实时运行 crew 并把输出放到队列中
 def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
@@ -278,7 +123,7 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
                 log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
             word_stream.raw_thought_lines.clear()
             try:
-                item = log_queue_thought.get(timeout=2)
+                item = log_queue_thought.get(timeout=0.5)
                 yield json.dumps(item, ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
@@ -368,7 +213,7 @@ def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
             word_stream.raw_thought_lines.clear()
             try:
                 # 输出前面 planner 阶段产生的 thought 日志
-                yield json.dumps(log_queue_thought.get(timeout=2), ensure_ascii=False) + "\n"
+                yield json.dumps(log_queue_thought.get(timeout=0.5), ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
         #  总结 planner 思考，插入到 thought 队列中（优先输出）
@@ -414,7 +259,7 @@ def run_code_analysis_and_stream(crew: Crew, inputs: dict, session: dict, cid: s
                 log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
             word_stream.raw_thought_lines.clear()
             try:
-                item = log_queue_thought.get(timeout=2)
+                item = log_queue_thought.get(timeout=0.5)
                 yield json.dumps(item, ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
@@ -431,7 +276,7 @@ def run_code_analysis_and_stream(crew: Crew, inputs: dict, session: dict, cid: s
 
         # 输出 result
         while not log_queue_result.empty():
-            yield json.dumps(log_queue_result.get(timeout=2), ensure_ascii=False) + "\n"
+            yield json.dumps(log_queue_result.get(timeout=0.5), ensure_ascii=False) + "\n"
 
         # 输出文件列表
         files_after = scan_output_files()
@@ -480,45 +325,13 @@ def chat():
     #history = session["history"]
     if not message:
         return jsonify({"error": "消息不能为空"}), 400
-    
-    
-    
+
     session["history"].append({"role": "user", "content": message})
     save_conversation(cid, session["history"])
 
-
-
-    # ---------------------- 自动判断是否是闲聊/问候 ----------------------
-    if should_greet_or_chitchat(message):  #  自动使用 LLM 判断
-        # 构建轻量 Crew 执行简单问候任务
-        execution_inputs = {
-            "user_input": message,
-            "context": format_history(session["history"]),
-        }
-
-        crew = Crew(
-            agents=[chat_agent],
-            tasks=[greeting_task],
-            process=Process.sequential,
-            verbose=True
-        )
-        return Response(
-            stream_with_context(
-                run_chatcrew_and_stream(
-                    crew=crew,
-                    inputs=execution_inputs,
-                    session=session,
-                    cid=cid
-                )
-            ),
-            mimetype="text/plain"
-        )
-
-    # ---------------------- 进入正常 planner 分配流程 ----------------------
-
     planner_inputs = {
         "user_input": message,
-        "context": format_history(session["history"]),
+        "history": format_history(session["history"]),
         "agents": json.dumps({
             "Agents": [{"id": item["id"], "configuration": item["configuration"]} 
                        for item in agents_dict.values()]
@@ -553,10 +366,7 @@ def chat():
             return
 
         # Step 3: 执行任务
-        execution_inputs = {
-            "user_input": message,
-            "context": format_history(session["history"]),
-        }
+
         execution_crew = Crew(
             agents=dynamic_agents,
             tasks=dynamic_tasks,
@@ -564,7 +374,7 @@ def chat():
             verbose=True
         )
 
-        yield from run_crewai_and_stream(execution_crew, execution_inputs, session, cid)
+        yield from run_crewai_and_stream(execution_crew, {"user_input": message}, session, cid)
         #session["execution_thought"] = exec_stream.get_thought()
 
 

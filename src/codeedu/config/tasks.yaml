@@ -1,3 +1,10 @@
+# /**
+#  * @ Author: Jianing ZHAO
+#  * @ Create Time: 2025-05-26 17:54:25
+#  * @ Modified by: Jianing ZHAO
+#  * @ Modified time: 2025-05-28 14:08:36
+#  * @ Description:
+#  */
 research_task:
   description: >
     针对用户指定的主题进行深入调研。
@@ -7,61 +14,122 @@ research_task:
     返回一个包含 10 条要点的列表，总结该主题下最重要、最相关的内容。
   agent: researcher
 
+# reporting_task:
+#   description: >
+#     请根据上下文中的研究内容，撰写完整的 Markdown 报告，包含每个主题的说明部分。
+#     最后，请调用 FileWriterTool 工具并将报告保存为 .md 文件到 output/ 文件夹中。
+#   expected_output: >
+#    {
+#       "content": "内容",
+#       "filename": "output/xxx.md",
+#       "summary": "总结"
+#     }
+#     - content: 为生成的文件
+#     - filename: 输出保存的路径
+#     - summary: 对内容进行简要说明
+
+#   agent: reporting_analyst
+
 reporting_task:
   description: >
-    请根据上下文中的研究内容，撰写完整的 markdown 报告，包含每个主题的说明部分
-    最后，请调用 FileWriterTool 工具并将报告保存为 .md 文件到 output/文件夹。返回JSON格式的文件信息
-  expected_output: >
-   {
-      "content": "内容",
-      "filename": "output/xxx.md",
-      "summary": "总结"
-    }
-    - content: 为生成的文件
-    - filename: 输出保存的路径
-    - summary: 对内容进行简要说明
+    请基于以下上下文内容 {context} 撰写完整的 Markdown 报告，包含每个主题的说明部分。
+    最后，请调用 FileWriterTool 工具将报告保存为 .md 文件到 output/ 文件夹中。
 
+  expected_output: >
+    你应该输出一段自然语言文本，其中包括：
+
+    1. **一句简短总结**：这份报告的主要内容或主题概述；
+    2. **保存路径**：明确说明生成的 Markdown 报告保存在何处（如：`output/report_xxx.md`）；
+    3. **提示语**：引导用户点击查看或下载报告，无需附上文件内容本身。
+
+    示例输出：
+
+    ✅ 报告已生成，内容总结如下：  
+    本报告详细分析了 AI 在教育中的应用场景，包括自适应学习、自动评分与智能辅导等。  
+
+    📁 文件已保存至：`output/xxxx.md`  (xxx 为具体名字)
+    📥 点击下载或在下方查看完整报告内容。
   agent: reporting_analyst
+
+
+# distribute_task:
+#   description: >
+#     根据用户输入的 {user_input} 和上下文 {context}，
+#     结合提供的 {agents} 和 {tasks} 信息，
+#     选择最合适的智能体（agents）和任务（tasks）进行分配。
+#   expected_output: >
+#     返回一个 distribution_config 字典，其中包含选中的智能体和任务。
+#     这些智能体和任务应来自输入的 agents_dict 和 tasks_dict。
+
+#     返回格式应如下：
+#     {
+#       "distribution_config": {
+#         "agents": [<agent_object>, ...],
+#         "tasks": [<task_object>, ...]
+#       }
+#     }
+#     每个 <agent_object> 和 <task_object> 都应是传入的 {agents}  或 {tasks} 字典中的对应项。
+#   agent: planner
+
 
 distribute_task:
   description: >
     根据用户输入的 {user_input}，结合提供的 {agents} 和 {tasks} 信息，
-    选择最合适的智能体（agents）和任务（tasks）进行分配。
-  expected_output: >
-    返回一个 distribution_config 字典，其中包含选中的智能体和任务。
-    这些智能体和任务应来自输入的 agents_dict 和 tasks_dict。
+    判断用户的真实意图，选择最合适的智能体（agents）和任务（tasks）进行分配。
 
-    返回格式应如下：
+    特别注意：
+    - 如果用户想 **学习知识、理解概念、问原理** → 使用 `education_task`
+    - 如果用户想让系统 **出题、生成练习题、设计问题** → 使用 `generate_quiz_task`
+    - 如果用户想写或分析代码 → 使用 `code_task`
+    - 如果只是闲聊 → 使用 `greeting_task`
+
+    举例：
+    - “帮我出个编程题目” → generate_quiz_task ✅
+    - “请解释一下快排” → education_task ✅
+    - “写个快排” → code_task ✅
+    - “你好你是谁” → greeting_task ✅
+
+  expected_output: >
+    返回格式如下：
+
     {
       "distribution_config": {
         "agents": [<agent_object>, ...],
         "tasks": [<task_object>, ...]
       }
     }
-    每个 <agent_object> 和 <task_object> 都应是传入的 {agents}  或 {tasks} 字典中的对应项。
+
+    每个 <agent_object> 和 <task_object> 都应是输入中提供的 agents/tasks 字典中的对象。
   agent: planner
 
 code_task:
   description: >
-   请根据用户输入 `{user_input}` 的自然语言编程请求，完成以下步骤：
-    - 自动生成一段可运行的 Python 脚本来解决问题；
-    - 如用户请求保存代码或结果，请使用 FileWriterTool 保存文件，路径应在 output/ 目录下；
-    - 执行代码，捕获并返回标准输出（如有）；
-    - 以 JSON 格式返回结果，包含字段：
-        - 'content': 最终生成的 Python 脚本代码
-        - 'filename': （如保存文件）保存的路径
-        - 'summary': 简要说明该脚本的功能
+    请结合上下文 {context} 和当前用户输入 `{user_input}` 的自然语言编程请求，完成以下步骤：
 
-    若无需保存文件，仅返回代码与执行结果即可。
+    - 自动生成一段可运行的 Python 脚本来解决问题；
+    - 判断是否需要保存代码或结果，如需要请使用 FileWriterTool 将脚本保存在 output/ 目录下；
+    - 执行代码并捕获输出（如有）；
+    - 最终请使用自然语言方式进行总结：
+      - 如果保存了文件，请列出文件路径与脚本功能摘要；
+      - 如果未保存文件，请以 markdown 格式展示代码，并简要描述其作用。
+
   expected_output: >
-   {
-      "content": "Python 脚本代码",
-      "filename": "output/xxx.py（如有）",
-      "summary": "简要说明脚本功能"
-    }
-    - content: 为生成的文件
-    - filename: 输出保存的路径
-    - summary: 对内容进行简要说明
+    输出格式应符合以下之一：
+
+    ✅ **生成脚本成功：**
+
+    📂 文件已保存至：`output/code_xxx.py`  
+    📋 功能描述：该脚本用于实现 {简要说明功能}。
+
+    或者：
+
+    🧠 以下是根据你的请求生成的 Python 脚本，用于实现 {功能说明}：
+
+    ```python
+    # 代码内容
+    ```
+
+    ✅ 你可以直接复制运行，或者告诉我是否需要保存为文件。
   agent: programmer
 
 # code_analysis_task:
@@ -89,25 +157,79 @@ code_task:
 
 education_task:
   description: >
-    请根据用户的问题 {user_input} 进行清晰、系统的讲解。
-    如有需要，可提供 Python 代码示例或输出文件。
+    请结合用户当前的问题 {user_input} 和之前的上下文 {context}，进行清晰、系统的讲解。
+    如有必要，可以附带 Python 代码示例说明，或将代码/输出结果保存为文件（保存路径为 output/ 目录）。
+
   expected_output: >
-    输出关于 {user_input} 的知识讲解，包括定义、原理、应用。
-    如适用，可附带 Python 示例或保存文件辅助理解。
+    请以自然语言进行输出，内容包括以下部分：
+
+    1. 📘 **知识讲解正文**：使用 Markdown 格式，讲清楚该主题的定义、原理、用途等；
+    2. 💡 **代码示例**：如适用，请以代码块形式插入 Python 示例；
+    3. 💾 **保存信息（可选）**：
+       - 如果用户请求保存，请说明生成的文件名和路径；
+       - 可提示“点击查看文件”或“已为你保存在本地”。
+
+    示例输出：
+
+    ---
+    👨‍🏫 **什么是递归？**
+
+    递归是一种在函数定义中调用自身的编程技巧，常用于解决可以分解为子问题的问题，例如树遍历、阶乘等。
+
+    ```python
+    def factorial(n):
+        return 1 if n == 0 else n * factorial(n - 1)
+    ```
+
+    ✅ 以上代码演示了如何使用递归计算阶乘。
+
+    📁 示例代码已保存至：`output/factorial_example.py`
   agent: educator
 
-# chat_task:
-#   description: >
-#     Use the conversation history to build your response to the user:
+generate_quiz_task:
+  description: >
+    请结合教学主题 {user_input} 与之前的对话上下文 {context}，
+    生成一组高质量的计算机编程类练习题，帮助学生巩固理解与应用。
 
-#     {history}
+    要求如下：
+    - 每题需提供中文描述；
+    - 包含示例输入输出；
+    - 提供解析与参考答案；
+    - 题目应与教学重点紧密相关；
+    - 如用户请求保存，请将题目保存为 Markdown 格式文件至 output/ 目录下。
 
-#     Respond to the user's message: {user_message}",
-#   expected_output: >
-#     Your output should be a relevant, accurate, and engaging response that directly addresses the user's query or continues the conversation logically.
-#   agent: assistant
+  expected_output: >
+    请以 Markdown 格式输出题目集，并包括以下结构：
 
+    - ✅ 每道题的编号和题型（如“编程题”）；
+    - ❓ 题目描述；
+    - 💬 示例输入与输出；
+    - 🧠 简要的答案与解析。
 
+    如用户希望保存，请补充以下自然语言提示：
 
+    📁 练习题已保存至：`output/quiz_list.md`  
+    📥 点击下载查看完整题目与答案。
 
+  agent: educator
 
+greeting_task:
+  description: >
+    用户发送的是一句寒暄、提问或者开放式交流（如“你刚刚在做什么”或“你是谁”）。
+
+    你需要结合下面这些历史上下文 {context}，以自然、有温度的方式继续交流。
+
+    如果上下文中包含你刚刚完成的任务或生成的内容（如生成了代码、报告、题目），你可以自然地提到并简要总结；
+    否则请保持轻松交流风格，不要引入复杂任务话题，除非用户明确表达需求。
+
+    请注意：
+    - 语言自然亲切，可适当加入 emoji；
+    - 不要强行执行任务型回应；
+    - 支持持续聊天，逐步引导用户探索更多功能。
+
+  expected_output: >
+    一段自然语言回复，符合上下文语气，继续与用户交流。
+    可提及你最近做了什么（如“刚刚我帮你写了一段关于快排的 Python 代码呢 😄”）；
+    若无明确上下文，请简单介绍你支持的功能。
+
+  agent: chat_agent

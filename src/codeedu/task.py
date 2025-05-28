@@ -1,8 +1,16 @@
+'''
+ # @ Author: Jianing ZHAO
+ # @ Create Time: 2025-05-26 17:54:25
+ # @ Modified by: Jianing ZHAO
+ # @ Modified time: 2025-05-28 14:09:55
+ # @ Description:
+ '''
+
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
-from agent_pool import planner, researcher, reporting_analyst, programmer, educator,executor
+from agent_pool import planner, researcher, reporting_analyst, programmer, educator,executor,chat_agent
 # from crewai.project import load_yaml_config
 from pathlib import Path
 # tasks_config = load_yaml_config('config/tasks.yaml')
@@ -55,7 +63,7 @@ code_analysis_task = Task(
         "5. 提出合理的优化建议，并给出优化后的代码版本与优化理由。"
     ),
     expected_output=(
-        "你必须输出一份结构清晰的 Markdown 报告，包含以下部分：\n"
+        "你必须输出一份结构清晰的 Markdown 报告,涉及代码的部分需要用md的代码块形式，包含以下部分：\n"
         "- ✅ 原始代码执行结果（或错误信息）\n"
         "- ❌ 错误分析与修复建议（如适用）\n"
         "- 🧪 示例数据与执行结果（如缺失需补全）\n"
@@ -65,6 +73,17 @@ code_analysis_task = Task(
     ),
     agent=executor
 )
+
+generate_quiz_task=Task(
+    config=tasks_config['generate_quiz_task'],
+    agent=educator,
+)
+
+greeting_task=Task(
+    config=tasks_config['greeting_task'],
+    agent=chat_agent,
+)
+
 
 
 
