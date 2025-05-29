@@ -82,7 +82,7 @@ export default {
       selectedDialogue: null,
       selectedDialogueID: null,
       abortController: null,
-      isSplitView: true,
+      isSplitView: false,
       splitWidth: 50,
       isResizing: false
     }

@@ -1,7 +1,8 @@
 <template>
   <div class="file-item" @click="downloadFile">
     <img :src="fileIcon" alt="file icon" class="file-icon" />
-    <span class="file-name" :title="fileName">{{ fileName }}</span>
+    <!-- <span class="file-name" :title="fileName">{{ fileName }}</span> -->
+    <span class="file-name" :title="displayName">{{ displayName }}</span>
   </div>
 </template>
 
@@ -41,6 +42,9 @@ export default {
         default:
           return require('@/assets/file.png')
       }
+    },
+    displayName() {
+      return this.fileName.replace(/^output\//, '')
     }
   },
   methods: {
@@ -53,7 +57,8 @@ export default {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = this.fileName
+        // link.download = this.fileName
+        link.download = this.displayName
         link.click()
         window.URL.revokeObjectURL(url)
       } catch (err) {
@@ -67,7 +72,7 @@ export default {
 <style scoped>
 .file-item {
   width: auto;
-  max-width: 260px;
+  max-width: 500px;
   display: inline-flex;
   align-items: center;
   padding: 10px 12px;
