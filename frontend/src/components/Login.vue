@@ -23,7 +23,7 @@
                     </div>
 
                     <!-- 主操作按钮 -->
-                    <button class="primary-btn">登录</button>
+                    <button class="primary-btn" @click="handleLogin">登录</button>
 
                     <!-- 底部链接区域 -->
                     <div class="action-links">
@@ -38,7 +38,13 @@
 
 <script>
 export default {
-    name: 'WhiteThemeLogin'
+    name: 'WhiteThemeLogin',
+    methods: {
+        handleLogin() {
+            // 这里可以添加登录验证逻辑
+            this.$router.push('/main')
+        }
+    }
 }
 </script>
 

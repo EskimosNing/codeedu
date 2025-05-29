@@ -14,7 +14,7 @@
 ::-webkit-scrollbar-thumb {
     background: #494a4d;
     border-radius: 5px;
-    border: 2px solid rgba(255,255,255,0.1); /* 微透明边框增加层次 */
+    border: 2px solid rgba(255,255,255,0.1);
     background-clip: content-box; /* 防止背景渗透到边框 */
   }
   
