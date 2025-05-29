@@ -54,7 +54,7 @@ code_task = Task(
 )
 code_analysis_task = Task(
     description=(
-        "请使用工具 FileReadTool 读取路径为 `{path}` 的 Python 代码文件，"
+        "请使用工具 FileReadTool 读取路径为 `{path}` 的 Python 代码文件"
         "读取成功后请将完整代码通过 CodeInterpreterTool 工具执行，并完成以下分析任务：\n\n"
         "1. 判断代码是否能正常运行，若存在错误请详细输出错误类型和错误位置；\n"
         "2. 对于不能运行的代码，请给出修复建议，并提供修复后的完整代码；\n"

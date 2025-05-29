@@ -3,7 +3,7 @@
  # @ Create Time: 2025-05-26 17:54:25
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-28 14:08:11
- # @ Description:
+ # @ Description: @Deprecated
  '''
 
 from flask import Flask, Response, stream_with_context,request,jsonify
@@ -29,7 +29,7 @@ from flask import send_from_directory
 from flask_cors import CORS
 from agent_pool import planner, researcher, reporting_analyst, programmer, educator,agents_config,executor,chat_agent
 from task import distribute_task, code_task, reporting_task, tasks_config,research_task,education_task,code_analysis_task,generate_quiz_task,greeting_task
-from utils.intention import should_greet_or_chitchat
+from utils.intention import should_greet_or_chitchat,summarize_thoughts_stream
 #src.codeedu.task 
 from pathlib import Path
 
@@ -137,49 +137,49 @@ def scan_output_files():
     return set(str(f) for f in output_dir.glob("*") if f.is_file())
 
 
-def summarize_thoughts_stream(thought_text):
-    from openai import OpenAI  # 或其他你用的 LLM 接口
-    import openai
+# def summarize_thoughts_stream(thought_text):
+#     from openai import OpenAI  # 或其他你用的 LLM 接口
+#     import openai
 
-    client = openai.OpenAI(api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+#     client = openai.OpenAI(api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
-    # 用 streaming 模式调用模型总结
-    response = client.chat.completions.create(
-        model="openai/gpt-4o-mini",  # or gpt-4o-mini
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "你是一个 AI 观察记录员，负责将多位 AI Agent 的任务执行过程，"
-                    "以结构清晰、容易理解的格式总结出来。"
-                    "\n\n"
-                    "你应该模仿 CrewAI 的 `thought` 日志风格，用中文表达，但要逻辑清楚、简明易懂。\n"
-                    "请使用以下结构来组织输出：\n"
-                    "1. 总览：本次任务的主要目标是什么；\n"
-                    "2. 分配：哪些 Agent 被分配到哪些任务；\n"
-                    "3. 执行：各个 Agent 是如何执行这些任务的，有没有使用工具，工具输出了什么；\n"
-                    "4. 结果简述：总结整体输出结果，是否成功，是否产生文件；\n"
-                    "5. 若有必要，补充关键逻辑或注意事项。\n\n"
-                    "风格上可以模仿 CrewAI 思考日志，但要更清楚更适合用户阅读，不要逐字复述原始输出。"
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"以下是 AI agents 在任务执行过程中的原始日志：\n\n{thought_text}\n\n"
-                    "请根据上面结构总结输出："
-                )
-            }
-        ],
-        stream=True,
-        temperature=0.5
-    )
+#     # 用 streaming 模式调用模型总结
+#     response = client.chat.completions.create(
+#         model=os.environ["OTHER_MODEL"],  # or gpt-4o-mini
+#         messages=[
+#             {
+#                 "role": "system",
+#                 "content": (
+#                     "你是一个 AI 观察记录员，负责将多位 AI Agent 的任务执行过程，"
+#                     "以结构清晰、容易理解的格式总结出来。"
+#                     "\n\n"
+#                     "你应该模仿 CrewAI 的 `thought` 日志风格，用中文表达，但要逻辑清楚、简明易懂。\n"
+#                     "请使用以下结构来组织输出：\n"
+#                     "1. 总览：本次任务的主要目标是什么；\n"
+#                     "2. 分配：哪些 Agent 被分配到哪些任务；\n"
+#                     "3. 执行：各个 Agent 是如何执行这些任务的，有没有使用工具，工具输出了什么；\n"
+#                     "4. 结果简述：总结整体输出结果，是否成功，是否产生文件；\n"
+#                     "5. 若有必要，补充关键逻辑或注意事项。\n\n"
+#                     "风格上可以模仿 CrewAI 思考日志，但要更清楚更适合用户阅读，不要逐字复述原始输出。"
+#                 )
+#             },
+#             {
+#                 "role": "user",
+#                 "content": (
+#                     f"以下是 AI agents 在任务执行过程中的原始日志：\n\n{thought_text}\n\n"
+#                     "请根据上面结构总结输出："
+#                 )
+#             }
+#         ],
+#         stream=True,
+#         temperature=0.5
+#     )
     
-    # 流式返回
-    for chunk in response:
-        delta = chunk.choices[0].delta
-        if hasattr(delta, "content") and delta.content:
-            yield json.dumps({"type": "thought", "data": delta.content}, ensure_ascii=False) + "\n"
+#     # 流式返回
+#     for chunk in response:
+#         delta = chunk.choices[0].delta
+#         if hasattr(delta, "content") and delta.content:
+#             yield json.dumps({"type": "thought", "data": delta.content}, ensure_ascii=False) + "\n"
 
 def run_chatcrew_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
     original_stdout = sys.stdout
@@ -210,7 +210,7 @@ def run_chatcrew_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
                 log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
             word_stream.raw_thought_lines.clear()
             try:
-                item = log_queue_thought.get(timeout=2)
+                item = log_queue_thought.get(timeout=0.1)
                 yield json.dumps(item, ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
@@ -232,7 +232,7 @@ def run_chatcrew_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
 
         #  输出 result（在 thought 之后）
         while not log_queue_result.empty():
-            yield json.dumps(log_queue_result.get(timeout=0.5), ensure_ascii=False) + "\n"
+            yield json.dumps(log_queue_result.get(timeout=2), ensure_ascii=False) + "\n"
 
         # files_after = scan_output_files()
         # new_files = files_after - files_before
@@ -278,7 +278,7 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
                 log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
             word_stream.raw_thought_lines.clear()
             try:
-                item = log_queue_thought.get(timeout=2)
+                item = log_queue_thought.get(timeout=0.1)
                 yield json.dumps(item, ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
@@ -332,10 +332,10 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
             #print(file_infos)
             #  通知前端文件信息
 
-            yield json.dumps({
-                "type": "file_list",
-                "files": file_infos
-            }, ensure_ascii=False) + "\n"
+            # yield json.dumps({
+            #     "type": "file_list",
+            #     "files": file_infos
+            # }, ensure_ascii=False) + "\n"
             session['file_infos']=file_infos
 
 
@@ -368,7 +368,7 @@ def run_planner_and_stream(planner_crew: Crew, inputs: dict, session: dict):
             word_stream.raw_thought_lines.clear()
             try:
                 # 输出前面 planner 阶段产生的 thought 日志
-                yield json.dumps(log_queue_thought.get(timeout=2), ensure_ascii=False) + "\n"
+                yield json.dumps(log_queue_thought.get(timeout=0.1), ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
         #  总结 planner 思考，插入到 thought 队列中（优先输出）
@@ -414,7 +414,7 @@ def run_code_analysis_and_stream(crew: Crew, inputs: dict, session: dict, cid: s
                 log_queue_thought.put({"type": "raw_thought", "data": strip_ansi(line)})
             word_stream.raw_thought_lines.clear()
             try:
-                item = log_queue_thought.get(timeout=2)
+                item = log_queue_thought.get(timeout=0.1)
                 yield json.dumps(item, ensure_ascii=False) + "\n"
             except queue.Empty:
                 continue
@@ -466,7 +466,17 @@ def format_history(history):
     return "\n".join([
         f"{msg['role']}: {msg['content']}" for msg in history
     ])
-
+import re
+def extract_json_from_text(text):
+    try:
+        # 提取最外层 JSON
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        else:
+            raise ValueError("No JSON object found")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"JSON Decode Error: {e}")
 
 # 发送消息并更新对话历史
 @app.route('/chat', methods=['POST'])
@@ -528,6 +538,11 @@ def chat():
                       for item in tasks_dict.values()]
                 },ensure_ascii=False),
     }
+    # print(">>>> AGENTS JSON >>>>")
+    # print(planner_inputs["agents"])
+    # print(">>>> TASKS JSON >>>>")
+    # print(planner_inputs["tasks"])
+
     def multi_stage_streaming():
         # Step 1: Planner
 
@@ -541,11 +556,15 @@ def chat():
  
         # Step 2: Parse Planner Result
         try:
-            parsed = json.loads(session.get("planner_output", "{}"))
+            #print(session.get("planner_output", "{}"))
+            parsed = extract_json_from_text(session.get("planner_output", ""))
+            #print("#######")
+            #print(parsed)
             agent_ids = [a["id"] for a in parsed["distribution_config"]["agents"]]
             task_ids = [t["id"] for t in parsed["distribution_config"]["tasks"]]
 
             log_queue_thought.put({"type": "thought", "data": f"\n[ Planner 分配结果] 使用 Agent: {agent_ids}, 任务: {task_ids}\n"})
+            json.dumps({"type": "thought", "data": f"\n[ Planner 分配结果] 使用 Agent: {agent_ids}, 任务: {task_ids}\n"}, ensure_ascii=False) + "\n"
             dynamic_agents = [agents_dict[aid]["agent"] for aid in agent_ids]
             dynamic_tasks = [tasks_dict[tid]["task"] for tid in task_ids]
         except Exception as e:
@@ -582,7 +601,7 @@ def chat():
                 yield json.dumps(parsed, ensure_ascii=False) + "\n"
          # Step 5: result 输出
         while not log_queue_result.empty():
-            yield json.dumps(log_queue_result.get(timeout=0.5), ensure_ascii=False) + "\n"
+            yield json.dumps(log_queue_result.get(timeout=2), ensure_ascii=False) + "\n"
 
         # Step 6: 文件
         if "file_infos" in session:
@@ -640,10 +659,12 @@ def execute_code_snippet():
     # 保存文件
     save_path = os.path.join(OUTPUT_DIR, file.filename)
     file.save(save_path)
+    # print(save_path)
 
     # 保存文件内容到历史中（markdown）
     with open(save_path, "r", encoding="utf-8") as f:
         code_content = f.read()
+    #print(code_content)
     session["history"].append({
         "role": "user",
         "content": f"```python\n{code_content}\n```"

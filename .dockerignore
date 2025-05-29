@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.swp
+*.tmp
+*.sqlite3
+output/
+conversations/
+.env
+.vscode/
+.idea/

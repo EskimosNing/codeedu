@@ -15,11 +15,12 @@ from crewai_tools import SerperDevTool,CodeInterpreterTool,FileWriterTool,FileRe
 import os
 from langchain.memory import ConversationBufferMemory
 import sys
-from dotenv import load_dotenv
+
 import yaml
 from crewai import LLM
 import copy
 from pathlib import Path
+from dotenv import load_dotenv
 ##############
 load_dotenv()
 os.environ["MODEL"] = os.getenv("MODEL")
@@ -29,6 +30,9 @@ os.environ["SERPER_API_KEY"] = os.getenv("SERPER_API_KEY")
 
 llm=LLM(model=os.environ["MODEL"],api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
+# serach_llm=LLM(model="openrouter/openai/gpt-4o-mini-search-preview",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"],temperature=0.0)
+code_llm=LLM(model="openrouter/arcee-ai/coder-large",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
 search_tool=SerperDevTool()
 code_tool=CodeInterpreterTool()
@@ -43,8 +47,8 @@ def load_yaml(path):
 agents_config = load_yaml(AGENTS_PATH)    
 
 
-planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-#code_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+#planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+
 
 
 chat_agent=Agent(
@@ -61,7 +65,7 @@ planner = Agent(
     verbose=True,  # Default: False
     allow_delegation=True,  # Default: False
     #tools=[search_tool],  # Optional: List of tools
-    llm=llm,
+    llm=planner_llm,
 )
 
 researcher = Agent(
@@ -88,7 +92,7 @@ programmer = Agent(
     allow_code_execution=True,
     memory=True,  # Default: True
     verbose=True,
-    llm=llm,
+    llm=code_llm,
     allow_delegation=False,
 )
 
@@ -99,21 +103,24 @@ educator = Agent(
     memory=True,  # Default: True
     verbose=False,  # Default: False
     allow_delegation=False,  # Default: False
-    llm=copy.deepcopy(llm),
+    llm=llm,
     tools=[write_tool]
 )
 
 executor = Agent(
     role="代码执行分析师",
     goal=(
-        "1. 使用 file_read_tool 读取上传的代码文件，如果失败应重试三次；\n"
-        "2. 读取成功后使用 code_tool 执行代码并分析结果与错误；\n"
+        "1. 使用 FileReadTool 读取上传的代码文件，如果失败应重试三次；\n"
+        "2. 读取成功后使用 CodeInterpreterTool 执行代码并分析结果与错误；\n"
         "3. 若未找到代码文件，直接返回；\n"
         "4. 不允许生成新代码，只能使用读取的原始代码进行执行分析。"
     ),
     backstory="经验丰富的 Python 工程师，擅长代码执行、调试、错误分析与优化。",
     tools=[read_tool, code_tool],
-    llm=planner_llm,
+    memory=True,
+    allow_code_execution=True,
+    allow_delegation=False,
+    llm=code_llm,
     verbose=True,
     max_iter=5
 )
