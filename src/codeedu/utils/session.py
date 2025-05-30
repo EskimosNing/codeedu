@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from config.paths import STORAGE_PATH
 
-# src/codeedu/core/session.py
+
 session_store = {}
 # --- 工具函数 ---
 # 获取对话的路径

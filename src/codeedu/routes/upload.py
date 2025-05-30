@@ -3,15 +3,13 @@
  # @ Create Time: 2025-05-29 22:21:46
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-29 22:22:05
- # @ Description:
+ # @ Description:upload.py
  '''
 
-# routes/upload.py
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context,send_from_directory
 import os
-from pathlib import Path
-from crewai import Crew,Agent,Task,Process
+from crewai import Crew,Process
 from utils.log_queues import log_queue_thought, log_queue_result
 from core.executor import run_code_analysis_and_stream
 from utils.session import get_or_create_session, save_conversation

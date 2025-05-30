@@ -3,7 +3,7 @@
  # @ Create Time: 2025-05-29 22:17:27
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-29 22:18:03
- # @ Description:
+ # @ Description: main.py
  '''
 from flask import Flask
 from flask_cors import CORS
@@ -25,7 +25,7 @@ os.makedirs(STORAGE_PATH, exist_ok=True)
 app.register_blueprint(chat_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(convo_bp)
-app.register_blueprint(chat_bp)
+
 
 if __name__ == "__main__":
     app.run(debug=False, host='0.0.0.0', port=5000)

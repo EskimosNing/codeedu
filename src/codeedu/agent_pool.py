@@ -21,7 +21,7 @@ from crewai import LLM
 import copy
 from pathlib import Path
 from dotenv import load_dotenv
-##############
+
 load_dotenv()
 os.environ["MODEL"] = os.getenv("MODEL")
 os.environ["OPENROUTER_API_KEY"] = os.getenv("OPENROUTER_API_KEY")
@@ -30,9 +30,10 @@ os.environ["SERPER_API_KEY"] = os.getenv("SERPER_API_KEY")
 
 llm=LLM(model=os.environ["MODEL"],api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
 
-# serach_llm=LLM(model="openrouter/openai/gpt-4o-mini-search-preview",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+
 planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"],temperature=0.0)
 code_llm=LLM(model="openrouter/arcee-ai/coder-large",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
+#you can customize
 
 search_tool=SerperDevTool()
 code_tool=CodeInterpreterTool()
@@ -45,10 +46,6 @@ def load_yaml(path):
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 agents_config = load_yaml(AGENTS_PATH)    
-
-
-#planner_llm=LLM(model="openrouter/anthropic/claude-3.7-sonnet",api_key=os.environ["OPENROUTER_API_KEY"],base_url=os.environ["BASE_URL"])
-
 
 
 chat_agent=Agent(

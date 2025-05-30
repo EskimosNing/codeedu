@@ -26,11 +26,11 @@ def run_chatcrew_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
     original_stdout = sys.stdout
     word_stream = WordStream()
     sys.stdout = word_stream
-    #files_before = set(scan_output_files())  # 执行前文件列表
+    
 
     def run():
         try:
-            result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
+            result = crew.kickoff(inputs=inputs) 
             session["final_result"] = result.raw
             
             for i in range(0, len(result.raw), 3):
@@ -82,7 +82,7 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
 
     def run():
         try:
-            result = crew.kickoff(inputs=inputs)  # 调用你自己的 CrewAI 实例
+            result = crew.kickoff(inputs=inputs)  
             session["final_result"] = result.raw
             
             for i in range(0, len(result.raw), 3):
@@ -120,7 +120,6 @@ def run_crewai_and_stream(crew: Crew, inputs: dict,session:dict,cid:str):
         sys.stdout = original_stdout
         new_files = detect_new_files(files_before) 
         if new_files:
-            #session['file_flag']=True
             file_infos = []
             for file in new_files:
                 file_infos.append({

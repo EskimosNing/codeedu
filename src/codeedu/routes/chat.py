@@ -3,7 +3,7 @@
  # @ Create Time: 2025-05-29 21:46:31
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-29 21:47:15
- # @ Description:
+ # @ Description: chat api
  '''
 
 from flask import Blueprint, Response, request, stream_with_context, jsonify
@@ -94,7 +94,7 @@ def chat():
     }
 
     def multi_stage_streaming():
-        # Step 1: Planner 分配
+        # Step 1: Planner distribution
         manager_crew = Crew(
             agents=[planner],
             tasks=[distribute_task],
@@ -103,7 +103,7 @@ def chat():
         )
         yield from run_planner_and_stream(manager_crew, planner_inputs, session)
 
-        # Step 2: Parse planner 输出
+        # Step 2: Parse planner output
         try:
             parsed = extract_json_from_text(session.get("planner_output", ""))
             agent_ids = [a["id"] for a in parsed["distribution_config"]["agents"]]
@@ -123,7 +123,7 @@ def chat():
             yield json.dumps({"type": "thought", "data": f"[ERROR]: {str(e)}"}, ensure_ascii=False) + "\n"
             return
 
-        # Step 3: 执行 Crew
+        # Step 3: execute Crew
         execution_inputs = {
             "user_input": message,
             "context": format_history(session["history"]),
@@ -136,7 +136,7 @@ def chat():
         )
         yield from run_crewai_and_stream(execution_crew, execution_inputs, session, cid)
 
-        # Step 4: 总结 Planner + Execution
+        # Step 4: summarize Planner + Execution
         full_thought = (
             session.get("planner_thought", "") + "\n" +
             session.get("execution_thought", "")
@@ -148,18 +148,18 @@ def chat():
                 summary_text += parsed["data"]
                 yield json.dumps(parsed, ensure_ascii=False) + "\n"
 
-        # Step 5: 输出最终结果
+        # Step 5: output final result
         while not log_queue_result.empty():
             yield json.dumps(log_queue_result.get(timeout=2), ensure_ascii=False) + "\n"
 
-        # Step 6: 输出文件（如果有）
+        # Step 6: Output file (if any)
         if "file_infos" in session:
             yield json.dumps({
                 "type": "file_list",
                 "files": session["file_infos"]
             }, ensure_ascii=False) + "\n"
 
-        # Step 7: 存储历史
+        # Step 7: save history
         session["history"].append({
             "role": "assistant",
             "content": session.get("final_result", ""),

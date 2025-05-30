@@ -21,18 +21,6 @@ def is_smalltalk(message: str) -> bool:
     return any(kw in message.lower() for kw in greetings)
 
 
-# def detect_intent(message: str) -> str:
-#     client = OpenAI(api_key=os.environ["OPENROUTER_API_KEY"], base_url=os.environ["BASE_URL"])
-#     response = client.chat.completions.create(
-#         model="gpt-3.5-turbo",
-#         messages=[
-#             {"role": "system", "content": "你是一个助手，请判断用户输入属于哪种类型：smalltalk（打招呼）、task（请求处理任务）、other（其它）。只返回类型标签。"},
-#             {"role": "user", "content": message}
-#         ]
-#     )
-#     return response.choices[0].message.content.strip()
-
-
 def should_greet_or_chitchat(message: str) -> bool:
 
 

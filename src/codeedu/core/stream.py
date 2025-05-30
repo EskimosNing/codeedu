@@ -3,7 +3,7 @@
  # @ Create Time: 2025-05-29 19:25:33
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-29 19:27:10
- # @ Description:流式输出拦截和日志清洗工具
+ # @ Description:Streaming interception and log cleaning tools
  '''
 import io
 import re
@@ -11,7 +11,6 @@ import queue
 
 
 
-# 匹配 ANSI 转义序列的正则
 ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 def clear_queue(q: queue.Queue):
@@ -30,11 +29,10 @@ class WordStream(io.StringIO):
     def __init__(self):
         super().__init__()
         self.result_buffer = ""
-        self.raw_thought_lines = []  # 👈 保存每行日志
+        self.raw_thought_lines = []  
 
     def write(self, s):
         self.result_buffer += s
-        # 实时收集，但不推送
         lines = s.splitlines(keepends=True)
         for line in lines:
             if line.strip():
