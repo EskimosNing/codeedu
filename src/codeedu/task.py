@@ -3,17 +3,13 @@
  # @ Create Time: 2025-05-26 17:54:25
  # @ Modified by: Jianing ZHAO
  # @ Modified time: 2025-05-28 14:09:55
- # @ Description:
+ # @ Description: tasks
  '''
 
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
-from crewai.agents.agent_builder.base_agent import BaseAgent
-from typing import List
+from crewai import Task
 from agent_pool import planner, researcher, reporting_analyst, programmer, educator,executor,chat_agent
-# from crewai.project import load_yaml_config
 from pathlib import Path
-# tasks_config = load_yaml_config('config/tasks.yaml')
+
 
 import yaml
    
@@ -39,7 +35,6 @@ research_task = Task(
 reporting_task = Task(
     config=tasks_config['reporting_task'],
 
-    #output_file='report_test.md',
     agent=reporting_analyst # type: ignore[index]
 )
 education_task = Task(
@@ -54,7 +49,7 @@ code_task = Task(
 )
 code_analysis_task = Task(
     description=(
-        "请使用工具 FileReadTool 读取路径为 `{path}` 的 Python 代码文件，"
+        "请使用工具 FileReadTool 读取路径为 `{path}` 的 Python 代码文件"
         "读取成功后请将完整代码通过 CodeInterpreterTool 工具执行，并完成以下分析任务：\n\n"
         "1. 判断代码是否能正常运行，若存在错误请详细输出错误类型和错误位置；\n"
         "2. 对于不能运行的代码，请给出修复建议，并提供修复后的完整代码；\n"
